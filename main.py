@@ -1,45 +1,30 @@
 #!/usr/bin/env python3
-
+"""Driver program for equation_evolution.
+Using the toolbox and mstats defined equation_evolution.definations
+the evolutionary process is run.
 """
-Inspired by https://deap.readthedocs.io/en/master/tutorials/basic/part1.html
-"""
-
-import operator
-
-from deap import base
-from deap import creator
-from deap import gp
+from deap import algorithms
 from deap import tools
+from equation_evolution.definations import toolbox, mstats
 
-from equation_evolution.primatives import pset
+__author__ = "Tyler Westland"
+__copyright__ = "Copyright 2019, Tyler Westland"
+__credits__ = ["Tyler Westland"]
+__license__ = "MIT"
+__version__ = "0.1"
+__maintainer = "Tyler Westland"
+__email__ = "westlatr@mail.uc.edu"
+__status__ = "Prototype"
 
+def main():
+	pop = toolbox.population(n=30)
+	hof = tools.HallOfFame(1)
+	pop, log = algorithms.eaSimple(pop, toolbox, 0.5, 0.1, 40, stats=mstats, halloffame=hof, verbose=True)
+	
+	return pop, log, hof
 
-# Type Creation
-## Indvidual Defintions
-creator.create("FitnessMin", base.Fitness, weights=(-1.0,))
-creator.create("Individual", gp.PrimitiveTree, fitness=creator.FitnessMin,
-               pset=pset)
-
-# Tool registration
-toolbox = base.Toolbox()
-toolbox.register("expr", gp.genHalfAndHalf, pset=pset, min_=1, max_=2)
-toolbox.register("individual", tools.initIterate, creator.Individual,
-                 toolbox.expr)
-
-# Testing
-ind1 = toolbox.individual()
-nodes, edges, labels = gp.graph(ind1)
-
-import pygraphviz as pgv
-
-g = pgv.AGraph()
-g.add_nodes_from(nodes)
-g.add_edges_from(edges)
-g.layout(prog="dot")
-
-for i in nodes:
-	n = g.get_node(i)
-	n.attr["label"] = labels[i]
-
-g.draw("tree.pdf")
+if __name__ == "__main__":
+	pop, log, hof = main()
+	print(log.stream)
+	toolbox.graph(hof[0], "halloffame.png")
 
