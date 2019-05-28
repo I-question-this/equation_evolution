@@ -43,13 +43,3 @@ for i in nodes:
 
 g.draw("tree.pdf")
 
-import matplotlib.pyplot as plt
-import networkx as nx
-from networkx.drawing.nx_agraph import graphviz_layout
-
-g = nx.Graph()
-g.add_nodes_from(nodes)
-g.add_edges_from(edges)
-
-nx.draw(g, pos = graphviz_layout(g), prog="dot")
-plt.show()
