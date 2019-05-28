@@ -11,17 +11,10 @@ from deap import creator
 from deap import gp
 from deap import tools
 
+from equation_evolution.primatives import pset
+
 
 # Type Creation
-## Equation pieces
-pset = gp.PrimitiveSet("MAIN", arity=1)
-pset.addPrimitive(operator.add, 2)
-pset.addPrimitive(operator.sub, 2)
-pset.addPrimitive(operator.mul, 2)
-pset.addPrimitive(operator.neg, 1)
-
-pset.renameArguments(ARG0="x")
-
 ## Indvidual Defintions
 creator.create("FitnessMin", base.Fitness, weights=(-1.0,))
 creator.create("Individual", gp.PrimitiveTree, fitness=creator.FitnessMin,
