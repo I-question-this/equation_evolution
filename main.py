@@ -5,7 +5,7 @@ the evolutionary process is run.
 """
 from deap import algorithms
 from deap import tools
-from equation_evolution.definations import toolbox, mstats
+from equation_evolution.definations import createEnvironment
 
 __author__ = "Tyler Westland"
 __copyright__ = "Copyright 2019, Tyler Westland"
@@ -16,7 +16,7 @@ __maintainer = "Tyler Westland"
 __email__ = "westlatr@mail.uc.edu"
 __status__ = "Prototype"
 
-def main():
+def main(toolbox, mstats):
 	pop = toolbox.population(n=30)
 	hof = tools.HallOfFame(1)
 	pop, log = algorithms.eaSimple(pop, toolbox, 0.5, 0.1, 40, stats=mstats, halloffame=hof, verbose=True)
@@ -24,7 +24,9 @@ def main():
 	return pop, log, hof
 
 if __name__ == "__main__":
-	pop, log, hof = main()
+	toolbox, mstats = createEnvironment("add(mul(x,2),add(1,1))", "mul(x,add(1,add(1,1)))", -3, 5)
+	pop, log, hof = main(toolbox, mstats)
 	print(log.stream)
-	toolbox.graph(hof[0], "halloffame.png")
+	toolbox.plotEquationStructure(hof[0], "halloffame--equation_structure.png")
+	toolbox.plotEquationResults(hof[0], "halloffame--equation_results.png")
 
