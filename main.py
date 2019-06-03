@@ -17,14 +17,14 @@ __email__ = "westlatr@mail.uc.edu"
 __status__ = "Prototype"
 
 def main(toolbox, mstats):
-	pop = toolbox.population(n=300)
+	pop = toolbox.population(n=100)
 	hof = tools.HallOfFame(1)
-	pop, log = algorithms.eaSimple(pop, toolbox, 0.5, 0.1, 400, stats=mstats, halloffame=hof, verbose=True)
+	pop, log = algorithms.eaSimple(pop, toolbox, 0.5, 0.1, 500, stats=mstats, halloffame=hof, verbose=True)
 	
 	return pop, log, hof
 
 if __name__ == "__main__":
-	toolbox, mstats = createEnvironment("add(pow(x,2),add(1,1))", "mul(x,add(1,add(1,1)))", 0, 1)
+	toolbox, mstats = createEnvironment("add(pow(x,add(1,1)),add(1,1))", "add(pow(x,add(1,add(1,1))),add(1,add(1,add(1,1)))", 0, 1)
 	pop, log, hof = main(toolbox, mstats)
 	print(log.stream)
 	toolbox.plotEquationStructure(hof[0], "halloffame--equation_structure.png")

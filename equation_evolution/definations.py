@@ -52,16 +52,18 @@ def createEnvironment(benign_equation, malware_equation, malware_xMin, malware_x
 	pset.addEphemeralConstant("rand", lambda: random.randint(-1,1))
 
 	# Creator
-	creator.create("FitnessMin", base.Fitness, weights=(-1.0, -100.0))
+	creator.create("FitnessMin", base.Fitness, weights=(-1.0, -.5))
 	creator.create("Individual", gp.PrimitiveTree, fitness=creator.FitnessMin, pset=pset)
 
 	# Tool registration
 	toolbox = base.Toolbox()
-	toolbox.register("expr", gp.genHalfAndHalf, pset=pset, min_=1, max_=2)
-	toolbox.register("individual", tools.initIterate, creator.Individual, toolbox.expr)
+	toolbox.register("manualExpr", gp.PrimitiveTree.from_string, pset=pset)
+	toolbox.register("benignExpr", lambda: toolbox.manualExpr(benign_equation))
+	toolbox.register("randomExpr", gp.genHalfAndHalf, pset=pset, min_=1, max_=2)
+	toolbox.register("starterExpr", lambda: toolbox.randomExpr() if random.random() >= 0.9 else toolbox.benignExpr())
+	toolbox.register("individual", tools.initIterate, creator.Individual, toolbox.starterExpr)
 	toolbox.register("population", tools.initRepeat, list, toolbox.individual)
 	toolbox.register("compile", gp.compile, pset=pset)
-	toolbox.register("manualExpr", gp.PrimitiveTree.from_string, pset=pset)
 	
 	toolbox.register("benignEquation", lambda x, eqn: eqn(x), eqn=toolbox.compile(toolbox.manualExpr(benign_equation)))
 	toolbox.register("malwareEquation", lambda x, eqn: eqn(x), eqn=toolbox.compile(toolbox.manualExpr(malware_equation)))
@@ -72,13 +74,19 @@ def createEnvironment(benign_equation, malware_equation, malware_xMin, malware_x
 		# Transform the tree expression in a collable function
 		func = toolbox.compile(expr=individual)
 		# Evaluate the mean squared errors
+		def calculateError(x, equation):
+			try:
+				return (func(x) - equation(x))**2
+			except OverflowError:
+				return numpy.inf
+
 		benignErrors = []
 		malwareErrors = []
 		for x in points:
 			if toolbox.inMalwareRange(x):
-				malwareErrors.append((func(x) - toolbox.malwareEquation(x))**2)
+				malwareErrors.append(calculateError(x, lambda x: toolbox.benignEquation(x)))
 			else:
-				benignErrors.append((func(x) - toolbox.benignEquation(x))**2)
+				benignErrors.append(calculateError(x, lambda x: toolbox.malwareEquation(x)))
 
 		return math.fsum(benignErrors) / len(benignErrors), math.fsum(malwareErrors) / len(malwareErrors)
 
@@ -96,6 +104,7 @@ def createEnvironment(benign_equation, malware_equation, malware_xMin, malware_x
 
 		g = pgv.AGraph()
 		g.add_nodes_from(nodes)
+		g.add_edges_from(edges)
 		g.layout(prog="dot")
 
 		for i in nodes:
