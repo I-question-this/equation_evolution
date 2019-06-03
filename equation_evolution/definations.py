@@ -59,8 +59,17 @@ def createEnvironment(benign_equation, malware_equation, malware_xMin, malware_x
 	toolbox = base.Toolbox()
 	toolbox.register("manualExpr", gp.PrimitiveTree.from_string, pset=pset)
 	toolbox.register("benignExpr", lambda: toolbox.manualExpr(benign_equation))
+	toolbox.register("malwareExpr", lambda: toolbox.manualExpr(malware_equation))
 	toolbox.register("randomExpr", gp.genHalfAndHalf, pset=pset, min_=1, max_=2)
-	toolbox.register("starterExpr", lambda: toolbox.randomExpr() if random.random() >= 0.9 else toolbox.benignExpr())
+	def starterExpr():
+		rand = random.random()
+		if rand < 0.333333:
+			return toolbox.randomExpr()
+		elif rand < 0.666666:
+			return toolbox.benignExpr()
+		else:
+			return toolbox.malwareExpr()
+	toolbox.register("starterExpr", starterExpr)
 	toolbox.register("individual", tools.initIterate, creator.Individual, toolbox.starterExpr)
 	toolbox.register("population", tools.initRepeat, list, toolbox.individual)
 	toolbox.register("compile", gp.compile, pset=pset)
