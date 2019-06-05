@@ -17,7 +17,7 @@ __status__ = "Prototype"
 if __name__ == "__main__":
   testPoints = [x/10. for x in range(-20,20)]
 
-  pop, log, hof, toolbox = evolve(100, 1000, 0.5, 0.1, testPoints)
+  pop, log, hof, toolbox = evolve(100, 200, 0.5, 0.1, testPoints)
   
   toolbox.plotEquationStructure(hof[0], "halloffame--equation_structure.png")
   toolbox.plotEquationResults(hof[0], testPoints, "halloffame--equation_results.png")

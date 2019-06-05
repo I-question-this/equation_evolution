@@ -46,19 +46,28 @@ def evalSymbReg(individual, points, toolbox):
 def areaBetweenTwoFunctions(func1, func2, lowerLimit, upperLimit):
   """The abs is to handle intersecting lines. From what I understand this is mathimatically valid.
   """
-  return integrate.quad(lambda x: abs(func1(x)-func2(x)), lowerLimit, upperLimit)
+  return integrate.quad(lambda x: abs(func1(x)-func2(x)), lowerLimit, upperLimit)[0]
 
-def evalIntegration(individual, lowerLimit, upperLimit, toolbox):
+def evalIntegration(individual, lowerLimit, upperLimit, malwareStartX, malwareEndX, toolbox):
   # Transform the tree expression in a callable function
   func = toolbox.compile(expr=individual)
   # Return the area between the target functions
   try:
-    benignError = areaBetweenTwoFunctions(func, toolbox.benignEquation, lowerLimit, malware_xMin)[0]
-    benignError += areaBetweenTwoFunctions(func, toolbox.benignEquation, malware_xMax, upperLimit)[0]
-    malwareError = areaBetweenTwoFunctions(func, toolbox.malwareEquation, malware_xMin, malware_xMax)[0]
-    return benignError, malwareError
+    if malwareStartX <= lowerLimit:
+      benignError = areaBetweenTwoFunctions(func, toolbox.compiledBenignEquation, malwareEndX, upperLimit)
+    elif malwareEndX >= upperLimit:
+      benignError = areaBetweenTwoFunctions(func, toolbox.compiledBenignEquation, lowerLimit, malwareStartX)
+    else:
+      benignError = areaBetweenTwoFunctions(func, toolbox.compiledBenignEquation, lowerLimit, malwareStartX) + areaBetweenTwoFunctions(func, toolbox.compiledBenignEquation, malwareEndX, upperLimit)
   except OverflowError:
-    return numpy.inf, numpy.inf
+    benignError = numpy.inf
+
+  try:
+    malwareError = areaBetweenTwoFunctions(func, toolbox.compiledMalwareEquation, max(lowerLimit,malwareStartX), min(upperLimit,malwareEndX))
+  except OverflowError:
+    malwareError = numpy.inf
+
+  return benignError, malwareError
 
 def toolboxRegistration(malwareStartX, malwareEndX, pset, toolbox):
   toolbox.register("compile", gp.compile, pset=pset)
@@ -70,7 +79,7 @@ def toolboxRegistration(malwareStartX, malwareEndX, pset, toolbox):
 
 
   toolbox.register("evalSymbReg", evalSymbReg, toolbox=toolbox)
-  toolbox.register("evalIntegration", evalIntegration, toolbox=toolbox)
+  toolbox.register("evalIntegration", evalIntegration,malwareStartX=malwareStartX, malwareEndX=malwareEndX, toolbox=toolbox)
 
   return toolbox
 

@@ -42,7 +42,8 @@ def createToolbox(testPoints):
   toolbox = mutation.toolboxRegistration(mutationSubTreeHeightMin, mutationSubTreeHieghtMax, maxTreeHeight, pset, toolbox)
 
   toolbox = evaluation.toolboxRegistration(malwareStartX, malwareEndX, pset, toolbox)
-  toolbox = evaluation.registerEvaluationThroughSymbolicRegression(testPoints, toolbox)
+#  toolbox = evaluation.registerEvaluationThroughSymbolicRegression(testPoints, toolbox)
+  toolbox = evaluation.registerEvaluationThroughIntegration(min(testPoints), max(testPoints), toolbox)
 
   toolbox = stats.toolboxRegistration(toolbox)
 
@@ -60,10 +61,13 @@ def replaceInfiniteErrorIndividuals(replacementSelection):
   return decorator
         
 
+
 def evolve(numPop, numGen, probMut, probCx, testPoints):
   toolbox = createToolbox(testPoints)
   toolbox.register("select", tools.selTournament, tournsize=3)
-  toolbox.decorate("select", replaceInfiniteErrorIndividuals(tools.selRandom))
+  def newIndividual(*args, **kargs):
+    return [toolbox.individual()]
+  toolbox.decorate("select", replaceInfiniteErrorIndividuals(newIndividual))
   mstats = stats.createStatisticsObject()
   hof = tools.HallOfFame(1)
 
