@@ -7,7 +7,6 @@ from .framework import mutation
 from .framework import population
 from .framework import primitives
 from .framework import stats
-from deap import algorithms
 from deap import base
 from deap import tools
 
@@ -60,19 +59,3 @@ def replaceInfiniteErrorIndividuals(replacementSelection):
     return wrapper
   return decorator
         
-
-
-def evolve(numPop, numGen, probMut, probCx, testPoints):
-  toolbox = createToolbox(testPoints)
-  toolbox.register("select", tools.selTournament, tournsize=3)
-  def newIndividual(*args, **kargs):
-    return [toolbox.individual()]
-  toolbox.decorate("select", replaceInfiniteErrorIndividuals(newIndividual))
-  mstats = stats.createStatisticsObject()
-  hof = tools.HallOfFame(1)
-
-  pop = toolbox.population(n=numPop)
-  pop, log = algorithms.eaSimple(pop, toolbox, probMut, probCx, numGen, stats=mstats, halloffame=hof, verbose=True)
-
-  return pop, log, hof, toolbox
-
