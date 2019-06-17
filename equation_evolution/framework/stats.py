@@ -48,11 +48,10 @@ def toolboxRegistration(toolbox):
   return toolbox
 
 def createStatisticsObject():
-  stats_benign = tools.Statistics(lambda ind: ind.fitness.values[0])
-  stats_malware = tools.Statistics(lambda ind: ind.fitness.values[1])
+  stats_error = tools.Statistics(lambda ind: ind.fitness.values)
   stats_size = tools.Statistics(len)
 
-  mstats = tools.MultiStatistics(benign=stats_benign, malware=stats_malware, size=stats_size)
+  mstats = tools.MultiStatistics(error=stats_error, size=stats_size)
   mstats.register("avg", numpy.mean)
   mstats.register("std", numpy.std)
   mstats.register("min", numpy.min)

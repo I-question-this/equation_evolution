@@ -20,8 +20,7 @@ __email__ = "westlatr@mail.uc.edu"
 __status__ = "Prototype"
 
 # Parameters
-benignWeight = -2.0
-malwareWeight = -1.0
+weight = -2.0
 benignEquation = "mul(x,add(1,1))"
 malwareEquation = "add(1, mul(x,add(1,1)))"
 malwareStartX = 0
@@ -35,7 +34,7 @@ def createToolbox(testPoints):
 
   toolbox = base.Toolbox()
 
-  individGen = population.individualGenerator(benignWeight, malwareWeight, pset)
+  individGen = population.individualGenerator(weight, pset)
   toolbox = population.toolboxRegistration(individGen, benignEquation, malwareEquation, pset, toolbox)
 
   toolbox = mutation.toolboxRegistration(mutationSubTreeHeightMin, mutationSubTreeHieghtMax, maxTreeHeight, pset, toolbox)

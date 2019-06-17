@@ -16,8 +16,8 @@ __maintainer = "Tyler Westland"
 __email__ = "westlatr@mail.uc.edu"
 __status__ = "Prototype"
 
-def individualGenerator(benignWeight, malwareWeight, pset):
-  creator.create("TrojanFitnessMin", base.Fitness, weights=(benignWeight, malwareWeight))
+def individualGenerator(weight, pset):
+  creator.create("TrojanFitnessMin", base.Fitness, weights=(weight,))
   creator.create("Individual", gp.PrimitiveTree, fitness=creator.TrojanFitnessMin, pset=pset)
   return creator.Individual
 

@@ -34,15 +34,11 @@ def evalSymbReg(individual, points, toolbox):
       print("func({}): {} | equation({}): {}".format(x, func(x), x, equation(x)))
       return numpy.inf
 
-  benignErrors = []
-  malwareErrors = []
+  errors = []
   for x in points:
-    if toolbox.inMalwareRange(x):
-      malwareErrors.append(calculateError(x, lambda x: toolbox.compiledMalwareEquation(x)))
-    else:
-      benignErrors.append(calculateError(x, lambda x: toolbox.compiledBenignEquation(x)))
+    errors.append(calculateError(x, toolbox.pieceWiseFunction))
 
-  return math.fsum(benignErrors) / len(benignErrors), math.fsum(malwareErrors) / len(malwareErrors)
+  return math.fsum(errors) / len(errors),
 
 def areaBetweenTwoFunctions(func1, func2, lowerLimit, upperLimit):
   """The abs is to handle intersecting lines. From what I understand this is mathimatically valid.
