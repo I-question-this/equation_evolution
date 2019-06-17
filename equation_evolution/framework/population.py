@@ -19,7 +19,7 @@ __status__ = "Prototype"
 def individualGenerator(benignWeight, malwareWeight, pset):
   creator.create("TrojanFitnessMin", base.Fitness, weights=(benignWeight, malwareWeight))
   creator.create("Individual", gp.PrimitiveTree, fitness=creator.TrojanFitnessMin, pset=pset)
-  return lambda: creator.Individual
+  return creator.Individual
 
 def toolboxRegistration(individualGenerator, benignEquation, malwareEquation, pset, toolbox):
   toolbox.register("manualEquation", gp.PrimitiveTree.from_string, pset=pset)
@@ -37,7 +37,7 @@ def toolboxRegistration(individualGenerator, benignEquation, malwareEquation, ps
       return toolbox.malwareEquation()
 
   toolbox.register("starterEquation", starterEquation)
-  toolbox.register("individual", tools.initIterate, creator.Individual, toolbox.starterEquation)
+  toolbox.register("individual", tools.initIterate, individualGenerator, toolbox.starterEquation)
   toolbox.register("population", tools.initRepeat, list, toolbox.individual)
 
   return toolbox
