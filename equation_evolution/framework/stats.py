@@ -36,6 +36,8 @@ def plotEquationResults(individual, points, output_name, toolbox):
 
   plt.plot(points, [func(x) for x in points], 'r', label="Evolved Trojan")
   plt.plot(points, [toolbox.pieceWiseFunction(x) for x in points], 'b--', label="Piecewise Target")
+  plt.plot(points, [toolbox.compiledMalwareEquation(x) for x in points], 'g--', label="Malware")
+  plt.plot(points, [toolbox.compiledBenignEquation(x) for x in points], 'k--', label="Benign")
   plt.legend(bbox_to_anchor=(0., 1.02, 1., .102), loc=3, ncol=2, mode="expand", borderaxespad=0.)
   plt.savefig(output_name)
 
