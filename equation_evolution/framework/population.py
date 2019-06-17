@@ -17,8 +17,8 @@ __email__ = "westlatr@mail.uc.edu"
 __status__ = "Prototype"
 
 def individualGenerator(benignWeight, malwareWeight, pset):
-  creator.create("FitnessMin", base.Fitness, weights=(-1.0, -.5))
-  creator.create("Individual", gp.PrimitiveTree, fitness=creator.FitnessMin, pset=pset)
+  creator.create("TrojanFitnessMin", base.Fitness, weights=(benignWeight, malwareWeight))
+  creator.create("Individual", gp.PrimitiveTree, fitness=creator.TrojanFitnessMin, pset=pset)
   return lambda: creator.Individual
 
 def toolboxRegistration(individualGenerator, benignEquation, malwareEquation, pset, toolbox):
