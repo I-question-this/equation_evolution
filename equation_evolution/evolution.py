@@ -20,8 +20,8 @@ __email__ = "westlatr@mail.uc.edu"
 __status__ = "Prototype"
 
 # Parameters
-benignWeight = -0.0
-malwareWeight = -2.0
+benignWeight = -2.0
+malwareWeight = -1.0
 benignEquation = "mul(x,add(1,1))"
 malwareEquation = "add(1, mul(x,add(1,1)))"
 malwareStartX = 0

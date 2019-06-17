@@ -41,3 +41,4 @@ def toolboxRegistration(individualGenerator, benignEquation, malwareEquation, ps
   toolbox.register("population", tools.initRepeat, list, toolbox.individual)
 
   return toolbox
+

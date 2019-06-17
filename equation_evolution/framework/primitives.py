@@ -2,7 +2,7 @@
 """
 """
 import math
-import numpy
+import numpy as np
 import operator
 import random
 from deap import gp
@@ -18,10 +18,10 @@ __status__ = "Prototype"
 
 # Protected operators
 def protectedDiv(left, right):
-  try:
+  if right == 0:
+    return 0
+  else:
     return left / right
-  except ZeroDivisionError:
-    return 1
 
 def protectedPow(base, exponent):
   if base == 0:
@@ -29,7 +29,7 @@ def protectedPow(base, exponent):
 
   result = base**exponent
   result = result.real if type(result) == complex else result
-  result = 1 if numpy.isinf(result) else result
+  result = 1 if np.isinf(result) else result
 
   return result
 

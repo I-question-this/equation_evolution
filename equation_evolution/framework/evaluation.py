@@ -30,7 +30,8 @@ def evalSymbReg(individual, points, toolbox):
   def calculateError(x, equation):
     try:
       return (func(x) - equation(x))**2
-    except OverflowError:
+    except (OverflowError, ValueError) as e:
+      print("func({}): {} | equation({}): {}".format(x, func(x), x, equation(x)))
       return numpy.inf
 
   benignErrors = []

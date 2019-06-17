@@ -3,6 +3,7 @@
 Using the toolbox and mstats defined equation_evolution.definations
 the evolutionary process is run.
 """
+import numpy as np
 from deap import algorithms
 from deap import tools
 from equation_evolution import evolution
@@ -19,7 +20,7 @@ __email__ = "westlatr@mail.uc.edu"
 __status__ = "Prototype"
 
 if __name__ == "__main__":
-  testPoints = [x/100. for x in range(-0,1000)]
+  testPoints = [x for x in np.arange(0,9,1)]
 
   toolbox = evolution.createToolbox(testPoints)
 
