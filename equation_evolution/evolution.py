@@ -20,12 +20,12 @@ __email__ = "westlatr@mail.uc.edu"
 __status__ = "Prototype"
 
 # Parameters
-benignWeight = -1.0
-malwareWeight = -100.0
-benignEquation = "add(pow(x,add(1,1)),add(1,1))"
-malwareEquation = "add(pow(x,add(1,add(1,1))),add(1,add(1,add(1,1)))"
-malwareStartX = 0
-malwareEndX = 1
+benignWeight = -0.0
+malwareWeight = -2.0
+benignEquation = "mul(x,add(1,1))"
+malwareEquation = "add(mul(x,add(add(1,1)),1)"
+malwareStartX = 1
+malwareEndX = 4
 mutationSubTreeHeightMin = 0
 mutationSubTreeHieghtMax = 2
 maxTreeHeight = 17
@@ -41,8 +41,6 @@ def createToolbox(testPoints):
   toolbox = mutation.toolboxRegistration(mutationSubTreeHeightMin, mutationSubTreeHieghtMax, maxTreeHeight, pset, toolbox)
 
   toolbox = evaluation.toolboxRegistration(malwareStartX, malwareEndX, pset, toolbox)
-#  toolbox = evaluation.registerEvaluationThroughSymbolicRegression(testPoints, toolbox)
-  toolbox = evaluation.registerEvaluationThroughIntegration(min(testPoints), max(testPoints), toolbox)
 
   toolbox = stats.toolboxRegistration(toolbox)
 

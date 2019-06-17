@@ -52,6 +52,7 @@ def evalIntegration(individual, lowerLimit, upperLimit, malwareStartX, malwareEn
   # Transform the tree expression in a callable function
   func = toolbox.compile(expr=individual)
   # Return the area between the target functions
+  """
   try:
     if malwareStartX <= lowerLimit:
       benignError = areaBetweenTwoFunctions(func, toolbox.compiledBenignEquation, malwareEndX, upperLimit)
@@ -66,8 +67,10 @@ def evalIntegration(individual, lowerLimit, upperLimit, malwareStartX, malwareEn
     malwareError = areaBetweenTwoFunctions(func, toolbox.compiledMalwareEquation, max(lowerLimit,malwareStartX), min(upperLimit,malwareEndX))
   except OverflowError:
     malwareError = numpy.inf
+  """
+  error = areaBetweenTwoFunctions(func, toolbox.pieceWiseFunction, lowerLimit, upperLimit) 
 
-  return benignError, malwareError
+  return error, error
 
 def toolboxRegistration(malwareStartX, malwareEndX, pset, toolbox):
   toolbox.register("compile", gp.compile, pset=pset)

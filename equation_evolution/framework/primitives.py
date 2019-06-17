@@ -2,6 +2,7 @@
 """
 """
 import math
+import numpy
 import operator
 import random
 from deap import gp
@@ -25,8 +26,12 @@ def protectedDiv(left, right):
 def protectedPow(base, exponent):
   if base == 0:
     return 0
+
   result = base**exponent
-  return result.real if type(result) == complex else result
+  result = result.real if type(result) == complex else result
+  result = 1 if numpy.isinf(result) else result
+
+  return result
 
 def createPrimitiveSet():
   pset = gp.PrimitiveSet("MAIN", arity=1)
@@ -36,7 +41,7 @@ def createPrimitiveSet():
   pset.addPrimitive(operator.sub, 2)
   pset.addPrimitive(operator.mul, 2)
   pset.addPrimitive(protectedDiv, 2, name="div")
-  pset.addPrimitive(protectedPow, 2, name="pow")
+#  pset.addPrimitive(protectedPow, 2, name="pow")
   pset.addPrimitive(operator.neg, 1)
   pset.addPrimitive(math.cos, 1)
   pset.addPrimitive(math.sin, 1)

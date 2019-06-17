@@ -6,6 +6,7 @@ the evolutionary process is run.
 from deap import algorithms
 from deap import tools
 from equation_evolution import evolution
+from equation_evolution.framework import evaluation
 from equation_evolution.framework import stats 
 
 __author__ = "Tyler Westland"
@@ -18,13 +19,17 @@ __email__ = "westlatr@mail.uc.edu"
 __status__ = "Prototype"
 
 if __name__ == "__main__":
-  testPoints = [x/10. for x in range(-20,20)]
+  testPoints = [x/100. for x in range(-0,1000)]
 
   toolbox = evolution.createToolbox(testPoints)
+
+  toolbox = evaluation.registerEvaluationThroughSymbolicRegression(testPoints, toolbox)
+  #toolbox = evaluation.registerEvaluationThroughIntegration(min(testPoints), max(testPoints), toolbox)
+
   toolbox.register("select", tools.selTournament, tournsize=3)
   def newIndividual(*args, **kargs):
     return [toolbox.individual()]
-  toolbox.decorate("select", evolution.replaceInfiniteErrorIndividuals(newIndividual))
+#  toolbox.decorate("select", evolution.replaceInfiniteErrorIndividuals(newIndividual))
 
   pop = toolbox.population(n=100)
   mstats = stats.createStatisticsObject()
