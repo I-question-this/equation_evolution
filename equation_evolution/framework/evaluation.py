@@ -3,7 +3,7 @@
 """
 import math
 import matplotlib.pyplot as plt
-import numpy
+import numpy as np
 import operator
 import pygraphviz as pgv
 import random
@@ -27,18 +27,16 @@ def evalSymbReg(individual, points, toolbox):
   # Transform the tree expression in a callable function
   func = toolbox.compile(expr=individual)
   # Evaluate the mean squared errors
-  def calculateError(x, equation):
-    try:
-      return (func(x) - equation(x))**2
-    except (OverflowError, ValueError) as e:
-      print("func({}): {} | equation({}): {}".format(x, func(x), x, equation(x)))
-      return numpy.inf
 
-  errors = []
-  for x in points:
-    errors.append(calculateError(x, toolbox.pieceWiseFunction))
-
-  return math.fsum(errors) / len(errors),
+  errors = np.power(
+             np.subtract(
+               np.fromiter(map(func, points), np.float_),
+               np.fromiter(map(toolbox.pieceWiseFunction, points), np.float_)
+             ), 
+             2
+           )
+  # Return average mean squared error
+  return np.mean(errors),
 
 def areaBetweenTwoFunctions(func1, func2, lowerLimit, upperLimit):
   """The abs is to handle intersecting lines. From what I understand this is mathimatically valid.

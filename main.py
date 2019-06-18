@@ -20,7 +20,7 @@ __email__ = "westlatr@mail.uc.edu"
 __status__ = "Prototype"
 
 if __name__ == "__main__":
-  testPoints = [x for x in np.arange(0,9,1)]
+  testPoints = np.array(np.arange(0,9,1))
 
   toolbox = evolution.createToolbox(testPoints)
 
@@ -36,7 +36,7 @@ if __name__ == "__main__":
   mstats = stats.createStatisticsObject()
   hof = tools.HallOfFame(1)
  
-  pop, log = algorithms.eaSimple(pop, toolbox, 0.1, 0.5, 200, stats=mstats, halloffame=hof)
+  pop, log = algorithms.eaSimple(pop, toolbox, 0.1, 0.5, 2000, stats=mstats, halloffame=hof)
   
   toolbox.plotEquationStructure(hof[0], "halloffame--equation_structure.png")
   toolbox.plotEquationResults(hof[0], testPoints, "halloffame--equation_results.png")
