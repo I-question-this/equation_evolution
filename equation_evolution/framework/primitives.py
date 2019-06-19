@@ -1,7 +1,6 @@
 #!/usr/bin/env python3
 """
 """
-import math
 import numpy as np
 import operator
 import random
@@ -27,11 +26,8 @@ def protectedPow(base, exponent):
   if base == 0:
     return 0
 
-  result = base**exponent
-  result = result.real if type(result) == complex else result
-  result = 1 if np.isinf(result) else result
-
-  return result
+  result = np.power(base, exponent, dtype=np.float_)
+  return 0 if np.isinf(result) or np.isnan(result) else result
 
 def createPrimitiveSet():
   pset = gp.PrimitiveSet("MAIN", arity=1)
@@ -41,11 +37,11 @@ def createPrimitiveSet():
   pset.addPrimitive(operator.sub, 2)
   pset.addPrimitive(operator.mul, 2)
   pset.addPrimitive(protectedDiv, 2, name="div")
-#  pset.addPrimitive(protectedPow, 2, name="pow")
+  pset.addPrimitive(protectedPow, 2, name="pow")
   pset.addPrimitive(operator.neg, 1)
-  pset.addPrimitive(math.cos, 1)
-  pset.addPrimitive(math.sin, 1)
-  pset.addEphemeralConstant("rand", lambda: random.randint(-1,1))
+  pset.addPrimitive(np.cos, 1)
+  pset.addPrimitive(np.sin, 1)
+  pset.addEphemeralConstant("rand", lambda: np.float_(random.randint(-1,1)))
 
   return pset
 
