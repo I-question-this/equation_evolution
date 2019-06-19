@@ -21,10 +21,10 @@ __status__ = "Prototype"
 
 # Parameters
 weight = -2.0
-benignEquation = "mul(x,add(1,1))"
-malwareEquation = "add(1, mul(x,add(1,1)))"
-malwareStartX = 0
-malwareEndX = 4
+benignEquation = "pow(x,add(1,1))"
+malwareEquation = "pow(x,add(1,add(1,1)))"
+malwareStartX = -1
+malwareEndX = 1
 mutationSubTreeHeightMin = 0
 mutationSubTreeHieghtMax = 2
 maxTreeHeight = 17
