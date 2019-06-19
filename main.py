@@ -23,15 +23,39 @@ __status__ = "Prototype"
 if __name__ == "__main__":
   # Argument parsing
   parser = argparse.ArgumentParser()
-  parser.add_argument("--hall_of_fame_max_size", type=lambda x: abs(int(x)),
-    default=1, help="Number of individuals to save in the hall of fame"
+  parser.add_argument("--benign_equation", default="pow(x,add(1,1))",
+    help="Can be any of the primitives and the parameter 'x'"
   )
   parser.add_argument("--crossover_probability", type=np.float_, default=0.1,
     help="The probability of cross over: 0<=x<=1"
   )
+  parser.add_argument("--fitness_weight", type=lambda x: -(abs(np.float_(x))),
+    default=-2.0, help="Since it's minimized error it is transformed into a negative"
+  )
+  parser.add_argument("--hall_of_fame_max_size", type=lambda x: abs(int(x)),
+    default=1, help="Number of individuals to save in the hall of fame"
+  )
+  parser.add_argument("--malware_equation", default="pow(x,add(1,add(1,1)))",
+    help="Can be any of the primitives and the parameter 'x'"
+  )
+  parser.add_argument("--malware_start_x", type=np.float_, default=-1.0,
+    help="The value that the malware equation is started to be inserted into"
+  )
+  parser.add_argument("--malware_stop_x", type=np.float_, default=1.0,
+    help="The value that the malware equation inseration stops at"
+  )
+  parser.add_argument("--max_tree_height", type=lambda x: abs(x), default=17,
+    help="The maximum tree size of the equations"
+  )
   parser.add_argument("--mutation_probability", type=np.float_, default=0.5,
     help="The probability of mutation: 0<=x<=1"
   )
+  parser.add_argument("--mutation_sub_tree_max", type=int, default=2,
+    help="The maximum size possible for the sub tree created in a mutation"
+  ) 
+  parser.add_argument("--mutation_sub_tree_min", type=int, default=0,
+    help="The minimum size possible for the sub tree created in a mutation"
+  ) 
   parser.add_argument("--number_of_generations", type=lambda x: abs(int(x)),
     default=200, help="The number of generations for the evolutation"
   )
@@ -55,7 +79,17 @@ if __name__ == "__main__":
     args.test_points_step
   ))
 
-  toolbox = evolution.createToolbox(testPoints)
+  toolbox = evolution.createToolbox(
+    args.benign_equation,
+    args.fitness_weight,
+    args.malware_equation,
+    args.malware_start_x,
+    args.malware_stop_x,
+    args.max_tree_height,
+    args.mutation_sub_tree_max,
+    args.mutation_sub_tree_min,
+    testPoints
+  )
 
   toolbox = evaluation.registerEvaluationThroughSymbolicRegression(testPoints, toolbox)
 

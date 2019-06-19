@@ -19,31 +19,23 @@ __maintainer = "Tyler Westland"
 __email__ = "westlatr@mail.uc.edu"
 __status__ = "Prototype"
 
-# Parameters
-weight = -2.0
-benignEquation = "pow(x,add(1,1))"
-malwareEquation = "pow(x,add(1,add(1,1)))"
-malwareStartX = -1
-malwareEndX = 1
-mutationSubTreeHeightMin = 0
-mutationSubTreeHieghtMax = 2
-maxTreeHeight = 17
 
-def createToolbox(testPoints):
+def createToolbox(benignEquation, fitnessWeight, malwareEquation, malwareStartX, malwareStopX, maxTreeHeight, mutationSubTreeHeightMax, mutationSubTreeHeightMin, testPoints):
   pset = primitives.createPrimitiveSet()
 
   toolbox = base.Toolbox()
 
-  individGen = population.individualGenerator(weight, pset)
+  individGen = population.individualGenerator(fitnessWeight, pset)
   toolbox = population.toolboxRegistration(individGen, benignEquation, malwareEquation, pset, toolbox)
 
-  toolbox = mutation.toolboxRegistration(mutationSubTreeHeightMin, mutationSubTreeHieghtMax, maxTreeHeight, pset, toolbox)
+  toolbox = mutation.toolboxRegistration(mutationSubTreeHeightMin, mutationSubTreeHeightMax, maxTreeHeight, pset, toolbox)
 
-  toolbox = evaluation.toolboxRegistration(malwareStartX, malwareEndX, pset, toolbox)
+  toolbox = evaluation.toolboxRegistration(malwareStartX, malwareStopX, pset, toolbox)
 
   toolbox = stats.toolboxRegistration(toolbox)
 
   return toolbox
+
 
 def replaceInfiniteErrorIndividuals(replacementSelection):
   def decorator(func):
