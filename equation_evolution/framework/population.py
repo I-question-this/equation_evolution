@@ -16,16 +16,20 @@ __maintainer = "Tyler Westland"
 __email__ = "westlatr@mail.uc.edu"
 __status__ = "Prototype"
 
-def individualGenerator(weight, pset):
-  creator.create("TrojanFitnessMin", base.Fitness, weights=(weight,))
-  creator.create("Individual", gp.PrimitiveTree, fitness=creator.TrojanFitnessMin, pset=pset)
-  return creator.Individual
+def individualGenerator(name, weight, pset):
+  creator.create("{}FitnessMin".format(name), base.Fitness, weights=(weight,))
+  creator.create("{}Individual".format(name), gp.PrimitiveTree, fitness=getattr(creator, "{}FitnessMin".format(name)), pset=pset)
+  return getattr(creator, "{}Individual".format(name))
 
 def toolboxRegistration(individualGenerator, benignEquation, malwareEquation, pset, toolbox):
   toolbox.register("manualEquation", gp.PrimitiveTree.from_string, pset=pset)
-  toolbox.register("benignEquation", lambda equ: equ, equ=toolbox.manualEquation(benignEquation))
-  toolbox.register("malwareEquation", lambda equ: equ, equ=toolbox.manualEquation(malwareEquation))
   toolbox.register("randomEquation", gp.genHalfAndHalf, pset=pset, min_=1, max_=2)
+  if benignEquation is None:
+    benignEquation = str(individualGenerator(gp.genFull(pset, 5, 10)))
+  toolbox.register("benignEquation", lambda equ: equ, equ=toolbox.manualEquation(benignEquation))
+  if malwareEquation is None:
+    malwareEquation = str(individualGenerator(gp.genFull(pset, 5, 10)))
+  toolbox.register("malwareEquation", lambda equ: equ, equ=toolbox.manualEquation(malwareEquation))
 
   def starterEquation():
     rand = random.random()

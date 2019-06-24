@@ -30,6 +30,9 @@ def plotEquationStructure(individual, output_name):
 
   g.draw(output_name)
 
+def writeEquation(individiual, output_name):
+  with open(output_name, "w") as f:
+    f.write(str(individiual))
 
 def plotEquationResults(individual, points, output_name, toolbox):
   func = toolbox.compile(expr=individual)
@@ -40,11 +43,12 @@ def plotEquationResults(individual, points, output_name, toolbox):
   plt.plot(points, [toolbox.compiledBenignEquation(x) for x in points], 'k--', label="Benign")
   plt.legend(bbox_to_anchor=(0., 1.02, 1., .102), loc=3, ncol=2, mode="expand", borderaxespad=0.)
   plt.savefig(output_name)
+  plt.close()
 
 def toolboxRegistration(toolbox):
   toolbox.register("plotEquationResults", plotEquationResults, toolbox=toolbox)
   toolbox.register("plotEquationStructure", plotEquationStructure)
-
+  toolbox.register("writeEquation", writeEquation)
   return toolbox
 
 def createStatisticsObject():

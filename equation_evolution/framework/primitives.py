@@ -29,8 +29,8 @@ def protectedPow(base, exponent):
   result = np.power(base, exponent, dtype=np.float_)
   return 0 if np.isinf(result) or np.isnan(result) else result
 
-def createPrimitiveSet():
-  pset = gp.PrimitiveSet("MAIN", arity=1)
+def createPrimitiveSet(name):
+  pset = gp.PrimitiveSet("{}Pset".format(name), arity=1)
   pset.renameArguments(ARG0='x')
 
   pset.addPrimitive(operator.add, 2)
@@ -41,7 +41,7 @@ def createPrimitiveSet():
   pset.addPrimitive(operator.neg, 1)
   pset.addPrimitive(np.cos, 1)
   pset.addPrimitive(np.sin, 1)
-  pset.addEphemeralConstant("rand", lambda: np.float_(random.randint(-1,1)))
+  pset.addEphemeralConstant("rand{}".format(name), lambda: np.float_(random.randint(-1,1)))
 
   return pset
 

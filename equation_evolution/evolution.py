@@ -20,12 +20,12 @@ __email__ = "westlatr@mail.uc.edu"
 __status__ = "Prototype"
 
 
-def createToolbox(benignEquation, fitnessWeight, malwareEquation, malwareStartX, malwareStopX, maxTreeHeight, mutationSubTreeHeightMax, mutationSubTreeHeightMin, testPoints):
-  pset = primitives.createPrimitiveSet()
+def createToolbox(name, benignEquation, fitnessWeight, malwareEquation, malwareStartX, malwareStopX, maxTreeHeight, mutationSubTreeHeightMax, mutationSubTreeHeightMin, testPoints):
+  pset = primitives.createPrimitiveSet(name)
 
   toolbox = base.Toolbox()
 
-  individGen = population.individualGenerator(fitnessWeight, pset)
+  individGen = population.individualGenerator(name, fitnessWeight, pset)
   toolbox = population.toolboxRegistration(individGen, benignEquation, malwareEquation, pset, toolbox)
 
   toolbox = mutation.toolboxRegistration(mutationSubTreeHeightMin, mutationSubTreeHeightMax, maxTreeHeight, pset, toolbox)
