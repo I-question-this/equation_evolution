@@ -5,6 +5,7 @@ the evolutionary process is run.
 """
 import argparse
 import numpy as np
+import os
 from deap import algorithms
 from deap import tools
 from equation_evolution import evolution
@@ -118,10 +119,15 @@ def runEvolution(args, output_name):
     halloffame=hof
   )
 
+  outputDirectory = "output"
+  if not os.path.exists(outputDirectory):
+    os.makedirs(outputDirectory)
+  
   for individualN in range(len(hof)):  
     toolbox.plotEquationStructure(
       hof[individualN],
-      "{}--halloffame-{}--equation_structure.png".format(
+      "{}/{}--halloffame-{}--equation_structure.png".format(
+        outputDirectory,
         output_name,
         individualN
       )
@@ -129,14 +135,16 @@ def runEvolution(args, output_name):
     toolbox.plotEquationResults(
       hof[individualN],
       testPoints,
-      "{}--halloffame-{}--equation_results.png".format(
+      "{}/{}--halloffame-{}--equation_results.png".format(
+        outputDirectory,
         output_name,
         individualN
       )
     )
     toolbox.writeEquation(
       hof[individualN],
-      "{}--halloffame-{}--equation_written.txt".format(
+      "{}/{}--halloffame-{}--equation_written.txt".format(
+        outputDirectory,
         output_name,
         individualN
       )
