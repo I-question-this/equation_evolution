@@ -40,7 +40,7 @@ def processArguments(inputArgs=None):
     raise ValueError("Must be 'True' or 'False'")
 
   parser.add_argument("trojan_creation", type=trueOrFalse,
-    help="<True,False>: States rather we are creating or removing a trojan. Purely for labeling purposes in the produced plot."
+    help="<True,False>: States rather we are creating or removing a trojan. For labeling and enusring that fitness is calculated properly."
   )
   parser.add_argument("--crossover_probability", type=np.float_, default=0.1,
     help="The probability of cross over: 0<=x<=1"
@@ -85,7 +85,14 @@ def processArguments(inputArgs=None):
     help="Step paramter for test points generated with numpy.arange"
   )
 
-  return parser.parse_args(inputArgs)
+  args = parser.parse_args(inputArgs)
+
+  # Ensure that only the beign target is used in evaluation if attempting to evolve it out.
+  if not args.trojan_creation:
+      args.target_start_x = -np.inf
+      args.target_stop_x = np.inf
+
+  return args
 
 
 def runEvolution(args):
