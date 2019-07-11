@@ -42,6 +42,8 @@ def processArguments(inputArgs=None):
   parser.add_argument("trojan_creation", type=trueOrFalse,
     help="<True,False>: States rather we are creating or removing a trojan. For labeling and enusring that fitness is calculated properly."
   )
+  parser.add_argument("--verbose", action='store_true', default=False, help="Rather to output results of each generation")
+  parser.add_argument("--acceptable_error", type=np.float_, default=0.01, help="Minimum error required for the generation process to end early. Default is 0.01")
   parser.add_argument("--crossover_probability", type=np.float_, default=0.1,
     help="The probability of cross over: 0<=x<=1"
   )
@@ -69,8 +71,8 @@ def processArguments(inputArgs=None):
   parser.add_argument("--mutation_sub_tree_height_min", type=int, default=0,
     help="The minimum size possible for the sub tree created in a mutation"
   ) 
-  parser.add_argument("--number_of_generations", type=lambda x: abs(int(x)),
-    default=1000, help="The number of generations for the evolutation"
+  parser.add_argument("--max_number_of_generations", type=lambda x: abs(int(x)),
+    default=1000, help="The maximum number of generations for the evolutation"
   )
   parser.add_argument("--number_of_individuals", type=lambda x: abs(int(x)),
     default=50, help="The number of individuals in each generation"
@@ -231,16 +233,50 @@ def runEvolution(args):
   # Run the evoluationary algorithm
   pop = toolbox.population(n=args.number_of_individuals)
   hof = tools.HallOfFame(args.hall_of_fame_max_size)
- 
-  pop, log = algorithms.eaSimple(
-    pop, 
-    toolbox, 
-    args.crossover_probability, 
-    args.mutation_probability,
-    args.number_of_generations,
-    stats=mstats, 
-    halloffame=hof
-  )
+  logbook = tools.Logbook()
+  logbook.header = ['gen', 'nevals'] + mstats.fields
+
+  # Evalutate the individuals with an invalid fitness
+  invalid_ind = [ind for ind in pop if not ind.fitness.valid]
+  fitnesses = toolbox.map(toolbox.evaluate, invalid_ind)
+  for ind, fit in zip(invalid_ind, fitnesses):
+      ind.fitness.values = fit
+
+  hof.update(pop)
+  record = mstats.compile(pop)
+  logbook.record(gen=0, nevals=len(invalid_ind), **record)
+  if args.verbose:
+      print(logbook.stream)
+
+  # Begin the generational process
+  gen = 1
+  while gen < args.max_number_of_generations and hof[0].fitness.values[0] > args.acceptable_error:
+      # Select the next generation individuals
+      offspring = toolbox.select(pop, len(pop))
+
+      # Vary the pool of individuals
+      offspring = algorithms.varAnd(offspring, toolbox, args.crossover_probability, args.mutation_probability)
+
+      # Evaluate the individuals with an invalid fitness (were modified)
+      invalid_ind = [ind for ind in offspring if not ind.fitness.valid]
+      fitnesses = toolbox.map(toolbox.evaluate, invalid_ind)
+      for ind, fit in zip(invalid_ind, fitnesses):
+          ind.fitness.values = fit
+
+      # Update the hall of fame with the generated individuals
+      hof.update(offspring)
+
+      # Replace the current population by the offspring
+      pop[:] = offspring
+
+      # Append the current generation statistics to the logbook
+      record = mstats.compile(pop)
+      logbook.record(gen=gen, nevals=len(invalid_ind), **record)
+      if args.verbose:
+          print(logbook.stream)
+
+      # Increase generation number
+      gen += 1
 
   # Define funcitons for recording output
   def plotEquationStructure(individual, output_name):

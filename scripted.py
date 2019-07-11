@@ -49,7 +49,8 @@ def runEvolution():
                     equation1,
                     equation2,
                     "True",
-                    "--number_of_generations",
+                    "--verbose",
+                    "--max_number_of_generations",
                     str(numberOfGenerationsCreation)
                 ]
             )
@@ -60,7 +61,8 @@ def runEvolution():
                     equation2,
                     equation1,
                     "False",
-                    "--number_of_generations",
+                    "--verbose",
+                    "--max_number_of_generations",
                     str(numberOfGenerationsRemoval)
                 ]
             )
@@ -123,18 +125,18 @@ def produceLaTeXFigures():
                     evolvedEquations[identifiers] = fStream.read().rstrip()
 
     def createLaTeXFigure(identifiers):
-        figureCode = "\\begin{{figure}}[h!]\n\t\\centering\n\t\\includegraphics[height=0.8\\textheight,keepaspectratio]{{\"img/plots/{}\"}}\n\t\\caption{{\n\t\t{}\n\t}}\n\\end{{figure}}\n"
+        figureCode = "\\begin{{figure}}[h!]\n\t\\centering\n\t\\includegraphics[height=0.6\\textheight,keepaspectratio]{{\"img/plots/{}\"}}\n\t\\caption{{\n\t\t{}\n\t}}\n\\end{{figure}}\n"
         plotFileName = plotFileNames[identifiers]
         evolvedEquation = evolvedEquations[identifiers]
         equation1 = equations[identifiers[0]]
         equation2 = equations[identifiers[1]]
 
         if identifiers[2] == "creation":
-            caption = "\"{}\" inserted into \"{}\" producing \"{}\"".format(equation2, equation1, evolvedEquation)
+            caption = "\"{}\" inserted into \"{}\"".format(equation2, equation1)
         else:
             trojanEquation = evolvedEquations[(identifiers[0],identifiers[1],"creation")]
-            caption = "\"{}\" removed from \"{}\" producing \"{}\" in attempt to recreate \"{}\""
-            caption = caption.format(equation2, trojanEquation, evolvedEquation, equation1)
+            caption = "Recreating \"{}\" by removing \"{}\" thus producing \"{}\""
+            caption = caption.format(equation1, equation2, evolvedEquation)
         return figureCode.format(plotFileName, caption)
 
     texFile = ""
