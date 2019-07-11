@@ -63,7 +63,9 @@ def runEvolution():
                     "False",
                     "--verbose",
                     "--max_number_of_generations",
-                    str(numberOfGenerationsRemoval)
+                    str(numberOfGenerationsRemoval),
+                    "--acceptable_error",
+                    "0.0"
                 ]
             )
             # Save files
