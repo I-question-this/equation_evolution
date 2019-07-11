@@ -51,7 +51,9 @@ def runEvolution():
                     "True",
                     "--verbose",
                     "--max_number_of_generations",
-                    str(numberOfGenerationsCreation)
+                    str(numberOfGenerationsCreation),
+                    "--acceptable_error",
+                    "0.05"
                 ]
             )
             # Run devolving the Trojan
