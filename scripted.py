@@ -2,18 +2,15 @@
 """Runs the main program multiple times with different equations
 """
 import argparse
+import datetime
 import os
 import subprocess
+from deap import gp
+from equation_evolution.primitives import pset
 
-outputDirectory = "scriptedOutput"
+outputDirectory = "output"
 if not os.path.exists(outputDirectory):
     os.makedirs(outputDirectory)
-
-scriptOutputDirectory = "output"
-trojanCreationPlotPath = "{}/TrojanCreation--halloffame-0--equation_results.png".format(scriptOutputDirectory)
-trojanCreationEquationPath = "{}/TrojanCreation--halloffame-0--equation_written.txt".format(scriptOutputDirectory)
-trojanRemovalPlotPath = "{}/TrojanRemoval--halloffame-0--equation_results.png".format(scriptOutputDirectory)
-trojanRemovalEquationPath = "{}/TrojanRemoval--halloffame-0--equation_written.txt".format(scriptOutputDirectory)
 
 equations = {
         "large1": "div(pow(sin(cos(sub(mul(pow(mul(sub(0.0, 1.0), pow(1.0, 0.0)), div(sub(x, x), pow(x, 0.0))), neg(div(div(1.0, x), add(0.0, 0.0)))), pow(mul(sub(cos(x), sin(-1.0)), sin(sin(x))), mul(div(add(-1.0, x), add(x, x)), mul(div(x, x), cos(0.0))))))), pow(sin(sub(sub(sub(neg(div(0.0, x)), sin(cos(1.0))), sin(neg(sin(-1.0)))), div(pow(add(mul(x, 1.0), sin(-1.0)), pow(div(x, 1.0), pow(x, 1.0))), add(sin(neg(x)), mul(cos(x), cos(x)))))), sin(sub(mul(neg(sin(sub(x, 0.0))), add(sub(sub(x, -1.0), sub(0.0, 1.0)), pow(neg(1.0), sin(-1.0)))), sub(pow(sin(cos(x)), add(sin(0.0), mul(0.0, x))), neg(div(pow(0.0, 0.0), sin(0.0)))))))), neg(sub(cos(cos(cos(sub(cos(div(x, x)), sub(div(-1.0, x), neg(1.0)))))), sin(sub(mul(sub(sin(neg(0.0)), sub(add(x, x), neg(x))), cos(div(mul(0.0, 0.0), add(1.0, x)))), sin(pow(sin(pow(x, 0.0)), add(sin(x), sub(x, -1.0)))))))))", 
@@ -38,70 +35,28 @@ numberOfGenerationsCreation = 2000
 numberOfGenerationsRemoval = 2000
 
 def runEvolution():
-    for equation1Name, equation1 in equations.items():
-        for equation2Name, equation2 in equations.items():
-            if equation1Name == equation2Name:
+    for benignEquationName, benignEquation in equations.items():
+        for malwareEquationName, malwareEquation in equations.items():
+            if benignEquationName == malwareEquationName:
                 continue
             # Run evolving the Trojan
             subprocess.run(
                 [
                     "./main.py",
-                    equation1,
-                    equation2,
-                    "True",
+                    benignEquation,
+                    malwareEquation,
+                    "--output_name",
+                    os.path.join(outputDirectory,
+                        "{}-{}-{}.pickle".format(
+                            benignEquationName,
+                            malwareEquationName,
+                            datetime.datetime.now()
+                        )
+                    ),
                     "--verbose",
                     "--max_number_of_generations",
                     str(numberOfGenerationsCreation),
-                    "--acceptable_error",
-                    "0.05"
                 ]
-            )
-            # Run devolving the Trojan
-            subprocess.run(
-                [
-                    "./main.py",
-                    equation2,
-                    equation1,
-                    "False",
-                    "--verbose",
-                    "--max_number_of_generations",
-                    str(numberOfGenerationsRemoval),
-                    "--acceptable_error",
-                    "0.0"
-                ]
-            )
-            # Save files
-            os.rename(
-                trojanCreationPlotPath,
-                "{}/{}-{}--trojan_creation--equation_plot.png".format(
-                    outputDirectory,
-                    equation1Name,
-                    equation2Name
-                )
-            )
-            os.rename(
-                trojanCreationEquationPath,
-                "{}/{}-{}--trojan_creation--equation_written.txt".format(
-                    outputDirectory,
-                    equation1Name,
-                    equation2Name
-                )
-            )
-            os.rename(
-                trojanRemovalPlotPath,
-                "{}/{}-{}--trojan_removal--equation_plot.png".format(
-                    outputDirectory,
-                    equation1Name,
-                    equation2Name
-                )
-            )
-            os.rename(
-                trojanRemovalEquationPath,
-                "{}/{}-{}--trojan_removal--equation_written.txt".format(
-                    outputDirectory,
-                    equation1Name,
-                    equation2Name
-                )
             )
 
 
@@ -150,15 +105,8 @@ def produceLaTeXFigures():
 
 
 if __name__ == "__main__":
-    def trueOrFalse(string:str):
-        if string.lower() == "true":
-            return True
-        if string.lower() == "false":
-            return False
-        raise ValueError("Must be 'True' or 'False'")
-
     parser = argparse.ArgumentParser()
-    parser.add_argument("--runEvolution", type=trueOrFalse, default=True,
+    parser.add_argument("--runEvolution", action="store_false", default=True,
             help="Rather to run the evolution or not. Default is True"
         )
 
