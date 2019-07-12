@@ -9,10 +9,9 @@ import numpy as np
 import operator
 import os
 import pickle
-import pygraphviz as pgv
 from deap import algorithms, base, creator, gp, tools
 from equation_evolution.algorithm import evolveUntilCondition
-from equation_evolution.primitives import pset
+from equation_evolution.setup import setup
 from equation_evolution.stats import mstats
 from functools import partial
 __author__ = "Tyler Westland"
@@ -51,10 +50,10 @@ def _processArguments(inputArgs=None):
   parser.add_argument("--fitness_weight", type=lambda x: -(abs(np.float_(x))),
     default=-2.0, help="Since it's minimized error it is transformed into a negative"
   )
-  parser.add_argument("--insertion_start_x", type=np.float_, default=-1.0,
+  parser.add_argument("--insertion_start", type=np.float_, default=-1.0,
     help="The value that the malware equation is started to be inserted into"
   )
-  parser.add_argument("--insertion_stop_x", type=np.float_, default=1.0,
+  parser.add_argument("--insertion_stop", type=np.float_, default=1.0,
     help="The value that the malware equation inseration stops at"
   )
   parser.add_argument("--max_tree_height", type=lambda x: abs(x), default=17,
@@ -88,100 +87,6 @@ def _processArguments(inputArgs=None):
   return parser.parse_args(inputArgs)
 
 
-def _setup(args):
-  # Create an emtpy toolbox
-  toolbox = base.Toolbox()
-  
-  # Create a custom type
-  creator.create("FitnessMin", base.Fitness,
-     weights=(args.fitness_weight,)
-  )
-  creator.create("Individual", gp.PrimitiveTree,
-    fitness=creator.FitnessMin, pset=pset
-  )
-
-
-  # Define creation of the equations
-  toolbox.register("manualEquation", gp.PrimitiveTree.from_string,
-    pset=pset
-  )
-  benignEquationPrimitiveTree = toolbox.manualEquation(args.benign_equation)
-  malwareEquationPrimitiveTree = toolbox.manualEquation(args.malware_equation)
-  
-  # Define creation of indiviuals for the  population
-  toolbox.register("individual", tools.initIterate, creator.Individual, 
-          lambda: benignEquationPrimitiveTree
-  )
-  toolbox.register("population", tools.initRepeat, list,
-   toolbox.individual
-  )
-
-  # Define mutation properties
-  toolbox.register("mate", gp.cxOnePoint)
-  toolbox.register("expr_mut", gp.genFull,
-     min_=args.mutation_sub_tree_height_min,
-     max_=args.mutation_sub_tree_height_max
-  )
-  toolbox.register("mutate", gp.mutUniform, expr=toolbox.expr_mut,
-    pset=pset
-  )
-
-  toolbox.decorate("mate",
-    gp.staticLimit(key=operator.attrgetter("height"),
-    max_value=args.max_tree_height)
-  )
-  toolbox.decorate("mutate",
-    gp.staticLimit(key=operator.attrgetter("height"),
-    max_value=args.max_tree_height)
-  )
-
-  # Define equation compiling
-  toolbox.register("compile", gp.compile, pset=pset)
-
-  # Create the array of points that will be used for test
-  testPoints = np.array(np.arange(
-    args.test_points_start,
-    args.test_points_stop,
-    args.test_points_step
-  ))
-  # Define evaluation
-  def evalSymbReg(individual, targetFunction, points):
-    # Transform the tree expression in a callable function
-    equation = toolbox.compile(expr=individual)
-    # Evaluate the mean squared errors
-
-    errors = np.power(
-               np.subtract(
-                 np.fromiter(map(equation, points), np.float_),
-                 np.fromiter(map(targetFunction, points),
-                    np.float_
-                 )
-               ), 
-               2
-             )
-    # Return average mean squared error
-    return np.mean(errors),
-  toolbox.register("evalSymbReg", evalSymbReg, points=testPoints)
-
-  def pieceWiseFunction(x, benignEquation, malwareEquation, insertionStart, insertionStop):
-    if insertionStart <= x <= insertionStop:
-      return malwareEquation(x)
-    else:
-      return benignEquation(x)
-  
-  benignEquationCompiled = toolbox.compile(benignEquationPrimitiveTree)
-  malwareEquationCompiled = toolbox.compile(malwareEquationPrimitiveTree)
-  toolbox.register("pieceWiseFunction", pieceWiseFunction,
-          benignEquation=benignEquationCompiled, malwareEquation=malwareEquationCompiled,
-          insertionStart=args.insertion_start_x, insertionStop=args.insertion_stop_x
-  )
- 
-  # Set selection method
-  toolbox.register("select", tools.selTournament, tournsize=3)
-
-  return toolbox
-
-
 def runEvolution(args, toolbox, targetError):
   # Run the evoluationary algorithm
   pop = toolbox.population(n=args.number_of_individuals)
@@ -191,17 +96,23 @@ def runEvolution(args, toolbox, targetError):
   def sufficientlyLowError(population, hallOfFame, error):
       return hallOfFame[0].fitness.values[0] <= error
 
-  hof, pop, gen = evolveUntilCondition(toolbox, pop, hof, args.mutation_probability, 
+  hof, pop, gen, logbook, rndstate = evolveUntilCondition(toolbox, pop, hof, args.mutation_probability, 
           args.crossover_probability, mstats,
           partial(sufficientlyLowError, error=targetError),
           args.max_number_of_generations, args.verbose)
 
   return {"hallOfFame": hof, "endingPopulation": pop, "generationsUsed": gen, 
-          "maximumGenerationsAllowed": args.max_number_of_generations}
+          "maximumGenerationsAllowed": args.max_number_of_generations,
+          "targetError": targetError, "logbook": logbook, "rndstate": rndstate
+         }
 
 if __name__ == "__main__":
   args = _processArguments()
-  toolbox = _setup(args)
+  toolbox = setup(args.benign_equation, args.malware_equation, args.fitness_weight,
+          args.mutation_sub_tree_height_min, args.mutation_sub_tree_height_max,
+          args.max_tree_height, args.test_points_start, args.test_points_stop,
+          args.test_points_step, args.insertion_start, args.insertion_stop
+          )
   # Create the Trojan
   toolbox.register("evaluate", toolbox.evalSymbReg, targetFunction=toolbox.pieceWiseFunction)
   creationResults = runEvolution(args, toolbox, args.trojan_creation_target_error)
@@ -213,7 +124,25 @@ if __name__ == "__main__":
   removalResults = runEvolution(args, toolbox, args.trojan_removal_target_error)
 
   # Save all the results
-  results = {"creation": creationResults, "removal": removalResults}
+  results = {"creation": creationResults,
+             "removal": removalResults,
+             "testPoints": {
+                 "start": args.test_points_start,
+                 "stop": args.test_points_stop,
+                 "step": args.test_points_step
+             },
+             "insertion": {
+                 "start": args.insertion_start,
+                 "stop": args.insertion_stop
+             },
+             "fitnessWeight": args.fitness_weight,
+             "mutationSubTreeHeight": {
+                 "min": args.mutation_sub_tree_height_min,
+                 "max": args.mutation_sub_tree_height_max
+             },
+             "maxTreeHeight": args.max_tree_height,
+             "version": 1.2
+            }
   with open(args.output_name, "wb") as fStream:
     print("Saving results to '{}'".format(args.output_name))
     pickle.dump(results, fStream)

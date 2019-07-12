@@ -1,9 +1,9 @@
+import random
 from deap import algorithms, tools
 
 def evolveUntilCondition(toolbox, population, hallOfFame, mutationProb, crossOverProb, stats, stoppingCondition, maxNumberOfGenerations, verbose=False):
-  if verbose:
-    logbook = tools.Logbook()
-    logbook.header = ['gen', 'nevals'] + stats.fields
+  logbook = tools.Logbook()
+  logbook.header = ['gen', 'nevals'] + stats.fields
 
   # Evalutate the individuals with an invalid fitness
   invalid_ind = [ind for ind in population if not ind.fitness.valid]
@@ -12,9 +12,9 @@ def evolveUntilCondition(toolbox, population, hallOfFame, mutationProb, crossOve
       ind.fitness.values = fit
 
   hallOfFame.update(population)
+  record = stats.compile(population)
+  logbook.record(gen=0, nevals=len(invalid_ind), **record)
   if verbose:
-    record = stats.compile(population)
-    logbook.record(gen=0, nevals=len(invalid_ind), **record)
     print(logbook.stream)
 
   # Begin the generational process
@@ -39,13 +39,13 @@ def evolveUntilCondition(toolbox, population, hallOfFame, mutationProb, crossOve
       population[:] = offspring
 
       # Append the current generation statistics to the logbook
+      record = stats.compile(population)
+      logbook.record(gen=gen, nevals=len(invalid_ind), **record)
       if verbose:
-        record = stats.compile(population)
-        logbook.record(gen=gen, nevals=len(invalid_ind), **record)
         print(logbook.stream)
 
       # Increase generation number
       gen += 1
 
-  return hallOfFame, population, gen
+  return hallOfFame, population, gen, logbook, random.getstate()
 
