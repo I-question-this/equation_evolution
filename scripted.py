@@ -31,8 +31,6 @@ equations = {
         "cos2": "cos(add(x,1)"
 }
 
-numberOfGenerationsCreation = 2000
-numberOfGenerationsRemoval = 2000
 
 def runEvolution():
     for benignEquationName, benignEquation in equations.items():
@@ -55,7 +53,7 @@ def runEvolution():
                     ),
                     "--verbose",
                     "--max_number_of_generations",
-                    str(numberOfGenerationsCreation),
+                    str(args.max_number_of_generations),
                 ]
             )
 
@@ -106,13 +104,15 @@ def produceLaTeXFigures():
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
-    parser.add_argument("--runEvolution", action="store_false", default=True,
+    parser.add_argument("--run_evolution", action="store_false", default=True,
             help="Rather to run the evolution or not. Default is True"
         )
-
+    parser.add_argument("--max_number_of_generations", type=int, default=2000,
+            help="The maximum number of generations. Default is 2000"
+    )
     args = parser.parse_args()
 
-    if args.runEvolution:
+    if args.run_evolution:
         runEvolution()
 
     produceLaTeXFigures()
