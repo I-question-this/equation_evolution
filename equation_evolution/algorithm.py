@@ -19,7 +19,7 @@ def evolveUntilCondition(toolbox, population, hallOfFame, mutationProb, crossOve
 
   # Begin the generational process
   gen = 1
-  while gen < maxNumberOfGenerations and not stoppingCondition(population, hallOfFame):
+  while gen <= maxNumberOfGenerations and not stoppingCondition(population, hallOfFame):
       # Select the next generation individuals
       offspring = toolbox.select(population, len(population))
 
