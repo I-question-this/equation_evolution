@@ -31,9 +31,11 @@ def _processArguments(inputArgs=None):
   parser.add_argument("benign_equation",
     help="Can be any of the primitives and the parameter 'x'"
   )
+  parser.add_argument("benign_equation_type", help="A descriptor of the type of equation")
   parser.add_argument("malware_equation",
     help="Can be any of the primitives and the parameter 'x'"
   )
+  parser.add_argument("malware_equation_type", help="A descriptor of the type of equation")
   parser.add_argument("--output_name", default="equationEvolution.pickle",
           help="Specifiy the output name"
   )
@@ -141,9 +143,11 @@ if __name__ == "__main__":
                  "max": args.mutation_sub_tree_height_max
              },
              "benignEquation": args.benign_equation,
+             "benignEquationType": args.benign_equation_type,
              "malwareEquation": args.malware_equation,
+             "malwareEquationType": args.malware_equation_type,
              "maxTreeHeight": args.max_tree_height,
-             "version": 1.2
+             "version": 1.3
             }
   with open(args.output_name, "wb") as fStream:
     print("Saving results to '{}'".format(args.output_name))

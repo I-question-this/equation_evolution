@@ -22,8 +22,8 @@ equations = {
         "exponential2": "pow(add(1,1),add(x,1))",
         "linear1": "x",
         "linear2": "add(x,1)",
-        "polynomial1": "pow(x,1)",
-        "polynomial2": "pow(x,add(1,1))",
+        "polynomial1": "pow(x,add(1,1))",
+        "polynomial2": "pow(x,add(1,add(1,1)))",
         "reciprocal1": "div(1,x)",
         "reciprocal2": "div(add(1,1),x)",
         "root1": "pow(x,div(1,add(1,1)))",
@@ -31,7 +31,7 @@ equations = {
         "sin1": "sin(x)",
         "sin2": "sin(add(x,1))",
         "cos1": "cos(x)",
-        "cos2": "cos(add(x,1)"
+        "cos2": "cos(add(x,1))"
 }
 
 
@@ -45,7 +45,9 @@ def runEvolution():
                 [
                     "./main.py",
                     benignEquation,
+                    benignEquationName,
                     malwareEquation,
+                    malwareEquationName,
                     "--output_name",
                     os.path.join(outputDirectory,
                         "{}-{}-{}.pickle".format(
