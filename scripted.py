@@ -72,13 +72,13 @@ def produceOutputs():
             with open(filePath, "rb") as fileIn:
                 results = pickle.load(fileIn)
 
-            if results["version"] > 1.0:
+            if results["version"] < 1.2:
                 print("{} -- Unsupported version: {}".format(fileName, results["version"]))
                 continue
 
             benignName = fileName.split('-')[0]
             malwareName = fileName.split('-')[1]
-            toolbox = toolboxSetup(equations[benignName], equations[malwareName],
+            toolbox = toolboxSetup(results["benignEquation"], results["malwareEquation"],
                 1, 3, 17, results["testPoints"]["start"], results["testPoints"]["stop"],
                 results["testPoints"]["step"], results["insertion"]["start"], 
                 results["insertion"]["stop"]
@@ -105,7 +105,7 @@ def produceOutputs():
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
-    parser.add_argument("--skip_evolution", action="store_true", default=True,
+    parser.add_argument("--skip_evolution", action="store_true", default=False,
             help="Rather to run the evolution or not. Default is True"
         )
     parser.add_argument("--max_number_of_generations", type=int, default=2000,

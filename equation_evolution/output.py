@@ -48,7 +48,7 @@ def plotTrojanCreation(benign, malware, piecewiseTrojan, evolvedTrojan, points, 
         label="Malware"
     )
     plt.plot(points, [piecewiseTrojan(x) for x in points], 'k--',
-        label="Piecewise Ideal"
+        label="Piecewise Ideal Trojan"
     )
     plt.plot(points, [evolvedTrojan(x) for x in points], 'r',
         label="Evolved Trojan"
@@ -79,7 +79,7 @@ def plotTrojanRemoval(actualBenign, malware, evolvedTrojan, evolvedBenign, point
     plt.plot(points, [evolvedTrojan(x) for x in points], 'r--',
         label="Evolved Trojan"
     )
-    plt.plot(points, [evolvedBenign(x) for x in points], 'k',
+    plt.plot(points, [evolvedBenign(x) for x in points], 'm',
         label="Evolved Benign"
     )
 

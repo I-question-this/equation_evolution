@@ -7,7 +7,7 @@ def setup(benignEquation, malwareEquation, fitnessWeight, mutationSubTreeHeightM
         mutationSubTreeHeightMax, maxTreeHeight, testPointsStart, testPointsStop,
         testPointsStep, insertionStart, insertionStop):
     creatorSetup(fitnessWeight)
-    toolboxSetup(benignEquation, malwareEquation, mutationSubTreeHeightMin,
+    return toolboxSetup(benignEquation, malwareEquation, mutationSubTreeHeightMin,
         mutationSubTreeHeightMax, maxTreeHeight, testPointsStart, testPointsStop,
         testPointsStep, insertionStart, insertionStop
     )

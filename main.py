@@ -119,7 +119,7 @@ if __name__ == "__main__":
   # Remove the Trojan
   toolbox.unregister("evaluate")
   toolbox.register("evaluate", toolbox.evalSymbReg,
-          targetFunction=toolbox.compile(creationResults["hallOfFame"][0])
+          targetFunction=toolbox.benignEquation
   )
   removalResults = runEvolution(args, toolbox, args.trojan_removal_target_error)
 
