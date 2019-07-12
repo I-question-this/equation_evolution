@@ -50,7 +50,7 @@ def runEvolution():
                         "{}-{}-{}.pickle".format(
                             benignEquationName,
                             malwareEquationName,
-                            datetime.datetime.now()
+                            str(datetime.datetime.now()).replace(" ", "_")
                         )
                     ),
                     "--verbose",
