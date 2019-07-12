@@ -4,11 +4,15 @@ from .primitives import pset
 from deap import base, creator, gp, tools
 
 def setup(benignEquation, malwareEquation, fitnessWeight, mutationSubTreeHeightMin,
-        mutationSubTreeHeightMax, maxTreeHeight, testPointsStart, testPointsStop, testPointsStep,
-        insertionStart, insertionStop):
-  # Create an emtpy toolbox
-  toolbox = base.Toolbox()
-  
+        mutationSubTreeHeightMax, maxTreeHeight, testPointsStart, testPointsStop,
+        testPointsStep, insertionStart, insertionStop):
+    creatorSetup(fitnessWeight)
+    toolboxSetup(benignEquation, malwareEquation, mutationSubTreeHeightMin,
+        mutationSubTreeHeightMax, maxTreeHeight, testPointsStart, testPointsStop,
+        testPointsStep, insertionStart, insertionStop
+    )
+
+def creatorSetup(fitnessWeight):
   # Create a custom type
   creator.create("FitnessMin", base.Fitness,
      weights=(fitnessWeight,)
@@ -16,6 +20,13 @@ def setup(benignEquation, malwareEquation, fitnessWeight, mutationSubTreeHeightM
   creator.create("Individual", gp.PrimitiveTree,
     fitness=creator.FitnessMin, pset=pset
   )
+
+def toolboxSetup(benignEquation, malwareEquation,  mutationSubTreeHeightMin,
+        mutationSubTreeHeightMax, maxTreeHeight, testPointsStart, testPointsStop,
+        testPointsStep, insertionStart, insertionStop):
+  # Create an emtpy toolbox
+  toolbox = base.Toolbox()
+  
 
 
   # Define creation of the equations
@@ -88,9 +99,11 @@ def setup(benignEquation, malwareEquation, fitnessWeight, mutationSubTreeHeightM
       return benignEquation(x)
   
   benignEquationCompiled = toolbox.compile(benignEquationPrimitiveTree)
+  toolbox.register("benignEquation", benignEquationCompiled)
   malwareEquationCompiled = toolbox.compile(malwareEquationPrimitiveTree)
+  toolbox.register("malwareEquation", malwareEquationCompiled)
   toolbox.register("pieceWiseFunction", pieceWiseFunction,
-          benignEquation=benignEquationCompiled, malwareEquation=malwareEquationCompiled,
+          benignEquation=toolbox.benignEquation, malwareEquation=toolbox.malwareEquation,
           insertionStart=insertionStart, insertionStop=insertionStop
   )
  

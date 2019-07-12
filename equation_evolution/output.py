@@ -3,6 +3,26 @@
 import matplotlib.pyplot as plt
 import numpy as np
 
+# def createLaTeXFigure(identifiers):
+    # figureCode = "\\begin{{figure}}[h!]\n\t\\centering\n\t\\includegraphics[height=0.6\\textheight,keepaspectratio]{{\"img/plots/{}\"}}\n\t\\caption{{\n\t\t{}\n\t}}\n\\end{{figure}}\n"
+    # plotFileName = plotFileNames[identifiers]
+    # evolvedEquation = evolvedEquations[identifiers]
+    # equation1 = equations[identifiers[0]]
+    # equation2 = equations[identifiers[1]]
+
+    # if identifiers[2] == "creation":
+        # caption = "\"{}\" inserted into \"{}\"".format(equation2, equation1)
+    # else:
+        # trojanEquation = evolvedEquations[(identifiers[0],identifiers[1],"creation")]
+        # caption = "Recreating \"{}\" by removing \"{}\" thus producing \"{}\""
+        # caption = caption.format(equation1, equation2, evolvedEquation)
+    # return figureCode.format(plotFileName, caption)
+
+# texFile = ""
+# for identifiers in plotFileNames.keys():
+    # with open(os.path.join(outputDirectory, "{}.tex".format("-".join(identifiers))), "w") as fileStream:
+        # fileStream.write(createLaTeXFigure(identifiers))
+
 
 def plotEquationStructure(individual, output_name):
     nodes, edges, labels = gp.graph(individual)
@@ -43,7 +63,7 @@ def plotTrojanCreation(benign, malware, piecewiseTrojan, evolvedTrojan, points, 
         mode="expand", borderaxespad=0.
     )
     # Save the figure
-    plt.savefig(output_name)
+    plt.savefig(outputName)
     # Close the figure
     plt.close()
 
@@ -72,7 +92,7 @@ def plotTrojanRemoval(actualBenign, malware, evolvedTrojan, evolvedBenign, point
         mode="expand", borderaxespad=0.
     )
     # Save the figure
-    plt.savefig(output_name)
+    plt.savefig(outputName)
     # Close the figure
     plt.close()
 

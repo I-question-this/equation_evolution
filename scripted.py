@@ -3,10 +3,13 @@
 """
 import argparse
 import datetime
+import numpy as np
 import os
+import pickle
 import subprocess
 from deap import gp
-from equation_evolution.primitives import pset
+from equation_evolution.output import plotTrojanCreation, plotTrojanRemoval
+from equation_evolution.setup import creatorSetup, toolboxSetup
 
 outputDirectory = "output"
 if not os.path.exists(outputDirectory):
@@ -58,53 +61,51 @@ def runEvolution():
             )
 
 
-def produceLaTeXFigures():
-    def getIdentifiers(fileName):
-        fileName = fileName.split("--")
-        equationNames = fileName[0].split("-")
-        equation1 = equationNames[0]
-        equation2 = equationNames[1]
-        objective = fileName[1].split("_")[1]
-        return equation1, equation2, objective
-
-    plotFileNames = {}
-    evolvedEquations = {}
-
+def produceOutputs():
+    creatorSetup(-2.0)
     for subDir, dirs, files in os.walk(outputDirectory):
         for fileName in files:
-            filePath = subDir + os.sep + fileName
-            if filePath.endswith(".png"):
-                identifiers = getIdentifiers(fileName)
-                plotFileNames[identifiers] = fileName.split(".")[0]
-            elif filePath.endswith(".txt"):
-                identifiers = getIdentifiers(fileName)
-                with open(filePath, "r") as fStream:
-                    evolvedEquations[identifiers] = fStream.read().rstrip()
+            if not fileName.endswith(".pickle"):
+                # It's not a pickle file, so skip it
+                continue
+            filePath = os.path.join(subDir, fileName)
+            with open(filePath, "rb") as fileIn:
+                results = pickle.load(fileIn)
 
-    def createLaTeXFigure(identifiers):
-        figureCode = "\\begin{{figure}}[h!]\n\t\\centering\n\t\\includegraphics[height=0.6\\textheight,keepaspectratio]{{\"img/plots/{}\"}}\n\t\\caption{{\n\t\t{}\n\t}}\n\\end{{figure}}\n"
-        plotFileName = plotFileNames[identifiers]
-        evolvedEquation = evolvedEquations[identifiers]
-        equation1 = equations[identifiers[0]]
-        equation2 = equations[identifiers[1]]
+            if results["version"] > 1.0:
+                print("{} -- Unsupported version: {}".format(fileName, results["version"]))
+                continue
 
-        if identifiers[2] == "creation":
-            caption = "\"{}\" inserted into \"{}\"".format(equation2, equation1)
-        else:
-            trojanEquation = evolvedEquations[(identifiers[0],identifiers[1],"creation")]
-            caption = "Recreating \"{}\" by removing \"{}\" thus producing \"{}\""
-            caption = caption.format(equation1, equation2, evolvedEquation)
-        return figureCode.format(plotFileName, caption)
-
-    texFile = ""
-    for identifiers in plotFileNames.keys():
-        with open(os.path.join(outputDirectory, "{}.tex".format("-".join(identifiers))), "w") as fileStream:
-            fileStream.write(createLaTeXFigure(identifiers))
+            benignName = fileName.split('-')[0]
+            malwareName = fileName.split('-')[1]
+            toolbox = toolboxSetup(equations[benignName], equations[malwareName],
+                1, 3, 17, results["testPoints"]["start"], results["testPoints"]["stop"],
+                results["testPoints"]["step"], results["insertion"]["start"], 
+                results["insertion"]["stop"]
+            )
+            points = np.array(np.arange(
+                results["testPoints"]["start"],
+                results["testPoints"]["stop"],
+                results["testPoints"]["step"]
+            ))
+            plotTrojanCreation(toolbox.benignEquation, toolbox.malwareEquation,
+                toolbox.pieceWiseFunction,
+                toolbox.compile(results["creation"]["hallOfFame"][0]),
+                points, results["insertion"]["start"], results["insertion"]["stop"],
+                filePath.replace("pickle", "trojanCreation.png")
+            )
+            plotTrojanRemoval(toolbox.benignEquation, toolbox.malwareEquation,
+                toolbox.compile(results["creation"]["hallOfFame"][0]),
+                toolbox.compile(results["removal"]["hallOfFame"][0]),
+                points, results["insertion"]["start"], results["insertion"]["stop"],
+                filePath.replace("pickle", "trojanRemoval.png")
+            )
+            # produceLaTeXFigures()
 
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
-    parser.add_argument("--run_evolution", action="store_false", default=True,
+    parser.add_argument("--skip_evolution", action="store_true", default=True,
             help="Rather to run the evolution or not. Default is True"
         )
     parser.add_argument("--max_number_of_generations", type=int, default=2000,
@@ -112,8 +113,7 @@ if __name__ == "__main__":
     )
     args = parser.parse_args()
 
-    if args.run_evolution:
+    if not args.skip_evolution:
         runEvolution()
-
-    produceLaTeXFigures()
+    produceOutputs()
 

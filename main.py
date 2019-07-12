@@ -140,6 +140,8 @@ if __name__ == "__main__":
                  "min": args.mutation_sub_tree_height_min,
                  "max": args.mutation_sub_tree_height_max
              },
+             "benignEquation": args.benign_equation,
+             "malwareEquation": args.malware_equation,
              "maxTreeHeight": args.max_tree_height,
              "version": 1.2
             }
