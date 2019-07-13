@@ -85,6 +85,9 @@ def _processArguments(inputArgs=None):
   parser.add_argument("--test_points_step", type=np.float_, default=0.25,
     help="Step paramter for test points generated with numpy.arange"
   )
+  parser.add_argument("--redoRemovalPickle",
+    help="File path to a pickle to redo the removal without redoing the creation. Yes this option was made because a horrible bug was found in the removal process."
+  )
 
   return parser.parse_args(inputArgs)
 
@@ -117,8 +120,25 @@ if __name__ == "__main__":
           )
   # Create the Trojan
   toolbox.register("evaluate", toolbox.evalSymbReg, targetFunction=toolbox.pieceWiseFunction)
-  creationResults = runEvolution(args, toolbox, args.trojan_creation_target_error)
+  if args.redoRemovalPickle is None:
+    creationResults = runEvolution(args, toolbox, args.trojan_creation_target_error)
+  else:
+    with open(args.redoRemovalPickle, "rb") as fileIn:
+      previousResults = pickle.load(fileIn)
+      creationResults = previousResults["creation"]
+
   # Remove the Trojan
+  # Redefine individuals to start as the Trojan
+  trojan = toolbox.manualEquation(str(creationResults["hallOfFame"][0]))
+  toolbox.unregister("individual")
+  toolbox.register("individual", tools.initIterate, creator.Individual,
+          lambda: trojan
+  )
+  toolbox.unregister("population")
+  toolbox.register("population", tools.initRepeat, list,
+   toolbox.individual
+  )
+  # Redefine the target to be the benign equation
   toolbox.unregister("evaluate")
   toolbox.register("evaluate", toolbox.evalSymbReg,
           targetFunction=toolbox.benignEquation
