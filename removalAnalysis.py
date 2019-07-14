@@ -14,8 +14,7 @@ outputDirectory = "output"
 
 creatorSetup(-2.0)
 
-gensUsed = []
-gensAllowed = []
+removals = []
 
 for subDir, dirs, files in os.walk(outputDirectory):
     for fileName in files:
@@ -26,11 +25,13 @@ for subDir, dirs, files in os.walk(outputDirectory):
         filePath = os.path.join(subDir, fileName)
         with open(filePath, "rb") as fileIn:
             results = pickle.load(fileIn)
-            gensUsed.append(results["removal"]["generationsUsed"])
-            gensAllowed.append(results["removal"]["maximumGenerationsAllowed"])
+            # Addresses an index error in the code, it caused a "off by one" error
+            results["removal"]["generationsUsed"] = min(results["removal"]["maximumGenerationsAllowed"], results["removal"]["generationsUsed"])
+            removals.append(results["removal"])
 
-print("Max Generations Used: {}".format(max(gensUsed)))
-print("Min Generations Used: {}".format(min(gensUsed)))
-print("Average Generations Used: {}".format(np.mean(gensUsed)))
-print("Average Ratio of Generations Used: {}".format(np.mean([used/allowed for used, allowed in zip(gensUsed, gensAllowed)]))) 
+
+print("Max Generations Used: {}".format(max(results["generationsUsed"] for results in removals)))
+print("Min Generations Used: {}".format(min(results["generationsUsed"] for results in removals)))
+print("Average Generations Used: {}".format(np.mean([results["generationsUsed"] for results in removals])))
+print("Average Ratio of Generations Used: {}".format(np.mean([results["generationsUsed"]/results["maximumGenerationsAllowed"] for results in removals]))) 
 
