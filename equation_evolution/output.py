@@ -2,6 +2,8 @@
 """
 import matplotlib.pyplot as plt
 import numpy as np
+import pygraphviz as pgv
+from deap import gp
 
 # def createLaTeXFigure(identifiers):
     # figureCode = "\\begin{{figure}}[h!]\n\t\\centering\n\t\\includegraphics[height=0.6\\textheight,keepaspectratio]{{\"img/plots/{}\"}}\n\t\\caption{{\n\t\t{}\n\t}}\n\\end{{figure}}\n"
