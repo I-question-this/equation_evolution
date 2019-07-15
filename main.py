@@ -40,8 +40,8 @@ def _processArguments(inputArgs=None):
           help="Specifiy the output name"
   )
   parser.add_argument("--verbose", action='store_true', default=False, help="Rather to output results of each generation")
-  parser.add_argument("--trojan_creation_target_error", type=np.float_, default=0.05,
-          help="Minimum error required for the generation process to end early for creation. Default is 0.05"
+  parser.add_argument("--trojan_creation_target_error", type=np.float_, default=0.0,
+          help="Minimum error required for the generation process to end early for creation. Default is 0.0"
   )
   parser.add_argument("--trojan_removal_target_error", type=np.float_, default=0.0,
           help="Minimum error required for the generation process to end early for removal. Default is 0.0"
