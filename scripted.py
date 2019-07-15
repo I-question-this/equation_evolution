@@ -112,6 +112,14 @@ def produceOutputs():
             )
             # produceLaTeXFigures()
 
+def produceLaTeXListOfEquations():
+    filePath = os.path.join("presentationOutput", "equationsList.tex")
+
+    with open(filePath, "w") as fileOut:
+        fileOut.write("\\begin{itemize}\n")
+        for equationName in sorted(equations.keys()):
+            fileOut.write("\item \\textbf{{{}:}} {}\n".format(equationName, equations[equationName]))
+        fileOut.write("\end{itemize}\n")
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
@@ -126,4 +134,5 @@ if __name__ == "__main__":
     if not args.skip_evolution:
         runEvolution()
     produceOutputs()
+    produceLaTeXListOfEquations()
 

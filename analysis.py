@@ -101,7 +101,7 @@ def analysis(mode):
     plt.gcf().subplots_adjust(left=margin, right=1.-margin, bottom=0.4)
     plt.gcf().set_size_inches(s, plt.gcf().get_size_inches()[1])
 
-    plt.savefig("{}_generations_used.png".format(mode))
+    plt.savefig(os.path.join("presentationOutput", "{}_generations_used.png".format(mode)))
     plt.close()
 
 analysis("creation")
