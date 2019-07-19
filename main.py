@@ -11,7 +11,7 @@ import os
 import pickle
 from deap import algorithms, base, creator, gp, tools
 from equation_evolution.algorithm import evolveUntilCondition
-from equation_evolution.setup import setup
+from equation_evolution.setup import creatorSetup, toolboxDirectSetup, toolboxGaussianSetup
 from equation_evolution.stats import mstats
 from functools import partial
 __author__ = "Tyler Westland"
@@ -38,6 +38,9 @@ def _processArguments(inputArgs=None):
   parser.add_argument("malware_equation_type", help="A descriptor of the type of equation")
   parser.add_argument("--output_name", default="equationEvolution.pickle",
           help="Specifiy the output name"
+  )
+  parser.add_argument("--direct", action="store_true", default=False,
+          help="Uses the direct manipluation of an equation instead of gausian"
   )
   parser.add_argument("--verbose", action='store_true', default=False, help="Rather to output results of each generation")
   parser.add_argument("--trojan_creation_target_error", type=np.float_, default=0.0,
@@ -113,11 +116,16 @@ def runEvolution(args, toolbox, targetError):
 
 if __name__ == "__main__":
   args = _processArguments()
-  toolbox = setup(args.benign_equation, args.malware_equation, args.fitness_weight,
-          args.mutation_sub_tree_height_min, args.mutation_sub_tree_height_max,
-          args.max_tree_height, args.test_points_start, args.test_points_stop,
-          args.test_points_step, args.insertion_start, args.insertion_stop
-          )
+  creatorSetup(args.fitness_weight)
+  if args.direct:
+    toolbox = toolboxDirectSetup(args.benign_equation, args.malware_equation, args.fitness_weight,
+            args.mutation_sub_tree_height_min, args.mutation_sub_tree_height_max,
+            args.max_tree_height, args.test_points_start, args.test_points_stop,
+            args.test_points_step, args.insertion_start, args.insertion_stop
+            )
+  else:
+    toolbox = toolboxGaussianSetup(args.benign_equation, args.malware_equation, args.test_points_start, args.test_points_stop, args.test_points_step, args.insertion_start, args.insertion_stop, -3, 3)
+
   # Create the Trojan
   toolbox.register("evaluate", toolbox.evalSymbReg, targetFunction=toolbox.pieceWiseFunction)
   if args.redoRemovalPickle is None:
@@ -129,14 +137,22 @@ if __name__ == "__main__":
 
   # Remove the Trojan
   # Redefine individuals to start as the Trojan
-  trojan = toolbox.manualEquation(str(creationResults["hallOfFame"][0]))
-  toolbox.unregister("individual")
-  toolbox.register("individual", tools.initIterate, creator.Individual,
-          lambda: trojan
-  )
+  if args.direct:
+    trojan = toolbox.manualEquation(str(creationResults["hallOfFame"][0]))
+    toolbox.unregister("individual")
+    toolbox.register("individual", tools.initIterate, creator.DirectedIndividual,
+     lambda: trojan
+    )
+  else:
+    trojan = creationResults["hallOfFame"][0]
+    toolbox.unregister("individual")
+    toolbox.register("individual", tools.initIterate, creator.GaussianIndividual,
+     lambda: trojan
+    )
+  # Redfine the population with the new individual
   toolbox.unregister("population")
   toolbox.register("population", tools.initRepeat, list,
-   toolbox.individual
+    toolbox.individual
   )
   # Redefine the target to be the benign equation
   toolbox.unregister("evaluate")
