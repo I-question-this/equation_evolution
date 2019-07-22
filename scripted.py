@@ -49,27 +49,33 @@ def runEvolution():
         for malwareEquationName, malwareEquation in equations.items():
             if benignEquationName == malwareEquationName:
                 continue
-            # Run evolving the Trojan
-            subprocess.run(
-                [
-                    "./main.py",
-                    benignEquation,
-                    benignEquationName,
-                    malwareEquation,
-                    malwareEquationName,
-                    "--output_name",
-                    os.path.join(outputDirectory,
-                        "{}-{}-{}.pickle".format(
-                            benignEquationName,
-                            malwareEquationName,
-                            str(datetime.datetime.now()).replace(" ", "_")
-                        )
-                    ),
-                    "--verbose",
-                    "--max_number_of_generations",
-                    str(args.max_number_of_generations),
-                ]
-            )
+            for insertionStart, insertionStop in [(-1,1), (-0.5,0.5), (-0.25,0.25)]:
+                # Run evolving the Trojan
+                subprocess.run(
+                    [
+                        "./main.py",
+                        benignEquation,
+                        benignEquationName,
+                        malwareEquation,
+                        malwareEquationName,
+                        "--output_name",
+                        os.path.join(outputDirectory,
+                            "{}-{}-{}-{}.pickle".format(
+                                benignEquationName,
+                                malwareEquationName,
+                                insertionStart,
+                                insertionStop
+                            )
+                        ),
+                        "--verbose",
+                        "--max_number_of_generations",
+                        str(args.max_number_of_generations),
+                        "--insertion_start",
+                        str(insertionStart),
+                        "--insertion_stop",
+                        str(insertionStop),
+                    ]
+                )
 
 
 def produceOutputs():
