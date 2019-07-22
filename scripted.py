@@ -8,8 +8,9 @@ import os
 import pickle
 import subprocess
 from deap import gp
+from functools import partial
 from equation_evolution.output import plotTrojanCreation, plotTrojanRemoval
-from equation_evolution.setup import creatorSetup, toolboxSetup
+from equation_evolution.setup import creatorSetup, toolboxDirectSetup, toolboxGaussianSetup
 
 outputDirectory = "output"
 if not os.path.exists(outputDirectory):
@@ -88,29 +89,44 @@ def produceOutputs():
 
             benignName = fileName.split('-')[0]
             malwareName = fileName.split('-')[1]
-            toolbox = toolboxSetup(results["benignEquation"], results["malwareEquation"],
-                1, 3, 17, results["testPoints"]["start"], results["testPoints"]["stop"],
-                results["testPoints"]["step"], results["insertion"]["start"], 
-                results["insertion"]["stop"]
-            )
-            points = np.array(np.arange(
-                results["testPoints"]["start"],
-                results["testPoints"]["stop"],
-                results["testPoints"]["step"]
-            ))
-            plotTrojanCreation(toolbox.benignEquation, toolbox.malwareEquation,
-                toolbox.pieceWiseFunction,
-                toolbox.compile(results["creation"]["hallOfFame"][0]),
-                points, results["insertion"]["start"], results["insertion"]["stop"],
-                filePath.replace("pickle", "trojanCreation.png")
-            )
-            plotTrojanRemoval(toolbox.benignEquation, toolbox.malwareEquation,
-                toolbox.compile(results["creation"]["hallOfFame"][0]),
-                toolbox.compile(results["removal"]["hallOfFame"][0]),
-                points, results["insertion"]["start"], results["insertion"]["stop"],
-                filePath.replace("pickle", "trojanRemoval.png")
-            )
-            # produceLaTeXFigures()
+            if args.direct:
+                toolbox = toolboxDirectSetup(results["benignEquation"], results["malwareEquation"],
+                    1, 3, 17, results["testPoints"]["start"], results["testPoints"]["stop"],
+                    results["testPoints"]["step"], results["insertion"]["start"], 
+                    results["insertion"]["stop"]
+                )
+                plotTrojanCreation(toolbox.benignEquation, toolbox.malwareEquation,
+                    toolbox.pieceWiseFunction,
+                    toolbox.compile(results["creation"]["hallOfFame"][0]),
+                    toolbox.testPoints(), results["insertion"]["start"], results["insertion"]["stop"],
+                    filePath.replace("pickle", "directTrojanCreation.png")
+                )
+                plotTrojanRemoval(toolbox.benignEquation, toolbox.malwareEquation,
+                    toolbox.compile(results["creation"]["hallOfFame"][0]),
+                    toolbox.compile(results["removal"]["hallOfFame"][0]),
+                    toolbox.testPoints(), results["insertion"]["start"], results["insertion"]["stop"],
+                    filePath.replace("pickle", "directTrojanRemoval.png")
+                )
+            else:
+                toolbox = toolboxGaussianSetup(results["benignEquation"], results["malwareEquation"],
+                    results["testPoints"]["start"], results["testPoints"]["stop"],
+                    results["testPoints"]["step"], results["insertion"]["start"], 
+                    results["insertion"]["stop"], -3, 3
+                )
+                evolvedTrojan = partial(toolbox.gaussianTrojan, results["creation"]["hallOfFame"][0], toolbox.benignEquation)
+                plotTrojanCreation(toolbox.benignEquation, toolbox.malwareEquation,
+                    toolbox.pieceWiseFunction,
+                    evolvedTrojan,
+                    toolbox.testPoints(), results["insertion"]["start"], results["insertion"]["stop"],
+                    filePath.replace("pickle", "directTrojanCreation.png")
+                )
+                evolvedBenign = partial(toolbox.gaussianTrojan, results["removal"]["hallOfFame"][0], toolbox.benignEquation)
+                plotTrojanRemoval(toolbox.benignEquation, toolbox.malwareEquation,
+                    evolvedTrojan,
+                    evolvedBenign,
+                    toolbox.testPoints(), results["insertion"]["start"], results["insertion"]["stop"],
+                    filePath.replace("pickle", "directTrojanRemoval.png")
+                )
 
 def produceLaTeXListOfEquations():
     filePath = os.path.join("presentationOutput", "equationsList.tex")
@@ -128,6 +144,9 @@ if __name__ == "__main__":
         )
     parser.add_argument("--max_number_of_generations", type=int, default=2000,
             help="The maximum number of generations. Default is 2000"
+    )
+    parser.add_argument("--direct", action="store_true", default=False,
+            help="Uses the direct manipluation of an equation instead of gausian"
     )
     args = parser.parse_args()
 

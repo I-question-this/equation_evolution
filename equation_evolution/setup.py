@@ -207,9 +207,13 @@ def toolboxGaussianSetup(benignEquation, malwareEquation, testPointsStart, testP
                   )),
               )
 
+  def gaussianTrojan(individual, benignEquation, x):
+        return benignEquation(x) + gaussianFunction(individual[0], individual[1], individual[2], x)
+  toolbox.register("gaussianTrojan", gaussianTrojan)
+
   def gaussianEvalSymbReg(individual, targetFunction, points):
     def trojan(x):
-        return toolbox.benignEquation(x) + gaussianFunction(individual[0], individual[1], individual[2], x)
+        return toolbox.gaussianTrojan(individual, toolbox.benignEquation, x)
 
     return toolbox.generalEvalSymbReg(trojan, targetFunction, points)
 
