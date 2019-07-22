@@ -35,15 +35,6 @@ def toolboxSetup(benignEquation, malwareEquation, testPointsStart, testPointsSto
   toolbox.register("benignEquation", benignEquationCompiled)
   malwareEquationCompiled = toolbox.compile(malwareEquationPrimitiveTree)
   toolbox.register("malwareEquation", malwareEquationCompiled)
-  def pieceWiseFunction(x, benignEquation, malwareEquation, insertionStart, insertionStop):
-    if insertionStart <= x <= insertionStop:
-      return malwareEquation(x)
-    else:
-      return benignEquation(x)
-  toolbox.register("pieceWiseFunction", pieceWiseFunction,
-          benignEquation=toolbox.benignEquation, malwareEquation=toolbox.malwareEquation,
-          insertionStart=insertionStart, insertionStop=insertionStop
-  )
 
   # Create the array of points that will be used for test
   testPoints = np.array(np.arange(
@@ -79,10 +70,6 @@ def toolboxDirectSetup(benignEquation, malwareEquation, mutationSubTreeHeightMin
         mutationSubTreeHeightMax, maxTreeHeight, testPointsStart, testPointsStop,
         testPointsStep, insertionStart, insertionStop):
   toolbox = toolboxSetup(benignEquation, malwareEquatio, ntestPointsStart, testPointsStop, testPointsStep, insertionStart, insertionStop) 
-
-
-  # Define creation of the equations
-  
   # Define creation of indiviuals for the  population
   toolbox.register("individual", tools.initIterate, creator.DirectIndividual, 
           lambda: toolbox.benignEquationPrimitiveTree()
@@ -116,6 +103,16 @@ def toolboxDirectSetup(benignEquation, malwareEquation, mutationSubTreeHeightMin
     return toolbox.generalEvalSymbReg(compiledIndivdual, targetFunction, points)
 
   toolbox.register("evalSymbReg", compiledIndividualEvalSymbReg, points=toolbox.testPoints())
+  
+  def pieceWiseFunction(x, benignEquation, malwareEquation, insertionStart, insertionStop):
+    if insertionStart <= x <= insertionStop:
+      return toolbox.malwareEquation(x)
+    else:
+      return toolbox.benignEquation(x)
+  toolbox.register("pieceWiseFunction", pieceWiseFunction,
+          benignEquation=toolbox.benignEquation, malwareEquation=toolbox.malwareEquation,
+          insertionStart=insertionStart, insertionStop=insertionStop
+  )
 
   return toolbox
 
@@ -253,6 +250,20 @@ def toolboxGaussianSetup(benignEquation, malwareEquation, mutationSubTreeHeightM
     return toolbox.generalEvalSymbReg(trojan, targetFunction, points)
 
   toolbox.register("evalSymbReg", gaussianEvalSymbReg, points=toolbox.testPoints())
+  
+  height = 1.0
+  center = np.mean([insertionStart, insertionStop])
+  width =  (insertionStop - insertionStart)/2.0
+  idealGaussianDistribution = partial(gaussianFunction, height, center, width)
+  maximum = idealGaussianDistribution(center)
+  def pieceWiseFunction(x):
+    malwarePortion = np.divide(idealGaussianDistribution(x), maximum)
+    benignPortion = np.subtract(1.0, malwarePortion)
+    return np.add(
+            np.multiply(malwarePortion, toolbox.malwareEquation(x)),
+            np.multiply(benignPortion, toolbox.benignEquation(x))
+            )
+  toolbox.register("pieceWiseFunction", pieceWiseFunction)
 
   return toolbox
 
