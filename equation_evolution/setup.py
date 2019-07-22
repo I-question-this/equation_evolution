@@ -2,6 +2,7 @@ import numpy as np
 import operator
 import random
 from .primitives import pset
+from functools import partial
 from deap import base, creator, gp, tools
 
 
@@ -74,7 +75,7 @@ def toolboxSetup(benignEquation, malwareEquation, testPointsStart, testPointsSto
   # Return the created toolbox
   return toolbox
 
-def toolboxDirectSetup(benignEquation, malwareEquation,  mutationSubTreeHeightMin,
+def toolboxDirectSetup(benignEquation, malwareEquation, mutationSubTreeHeightMin,
         mutationSubTreeHeightMax, maxTreeHeight, testPointsStart, testPointsStop,
         testPointsStep, insertionStart, insertionStop):
   toolbox = toolboxSetup(benignEquation, malwareEquatio, ntestPointsStart, testPointsStop, testPointsStep, insertionStart, insertionStop) 
@@ -119,7 +120,8 @@ def toolboxDirectSetup(benignEquation, malwareEquation,  mutationSubTreeHeightMi
   return toolbox
 
 
-def toolboxGaussianSetup(benignEquation, malwareEquation, testPointsStart, testPointsStop, testPointsStep, insertionStart, insertionStop, initialValueRangeStart, initialValueRangeStop):
+def toolboxGaussianSetup(benignEquation, malwareEquation, mutationSubTreeHeightMin, mutationSubTreeHeightMax, maxTreeHeight,
+        testPointsStart, testPointsStop, testPointsStep, insertionStart, insertionStop, initialValueRangeStart, initialValueRangeStop):
   if initialValueRangeStart == 0 and initialValueRangeStop == 0:
       raise ValueError("The range of initial values can't be restricted  to just 0")
 
@@ -135,7 +137,7 @@ def toolboxGaussianSetup(benignEquation, malwareEquation, testPointsStart, testP
       return c
 
   def randomGaussian():
-    return [randomAorB(), randomAorB(), randomC()]
+    return [randomAorB(), randomAorB(), randomC(), toolbox.benignEquationPrimitiveTree()]
 
   toolbox.register("individual", tools.initIterate, creator.GaussianIndividual, 
           randomGaussian
@@ -144,6 +146,17 @@ def toolboxGaussianSetup(benignEquation, malwareEquation, testPointsStart, testP
           toolbox.individual
   )
 
+  toolbox.register("expr_mut", gp.genFull,
+     min_=mutationSubTreeHeightMin,
+     max_=mutationSubTreeHeightMax
+  )
+  toolbox.register("treeMutate", gp.mutUniform, expr=toolbox.expr_mut,
+    pset=pset
+  )
+  toolbox.decorate("treeMutate",
+    gp.staticLimit(key=operator.attrgetter("height"),
+    max_value=maxTreeHeight)
+  )
   def mutate(gaussian):
     choice = random.randrange(0,len(gaussian),1)
     change = random.randrange(-3,3)
@@ -155,11 +168,21 @@ def toolboxGaussianSetup(benignEquation, malwareEquation, testPointsStart, testP
         change = random.randrange(-3,3)
         newC = gaussian[choice] + change
       gaussian[choice] = newC
+    elif choice == 3:
+      gaussian[choice] = toolbox.treeMutate(gaussian[choice])[0]
     else:
       raise ValueError("Illegal mutation choice: {}".format(choice))
 
     return gaussian,
 
+  toolbox.register("mutate", mutate)
+
+  toolbox.register("treeMate", gp.cxOnePoint)
+
+  toolbox.decorate("treeMate",
+    gp.staticLimit(key=operator.attrgetter("height"),
+    max_value=maxTreeHeight)
+  )
   def mate(gaussian1, gaussian2):
     if gaussian1[0] != gaussian2[0]:
         newA1 = random.randrange(min(gaussian1[0], gaussian2[0]), max(gaussian1[0], gaussian2[0]))
@@ -187,9 +210,10 @@ def toolboxGaussianSetup(benignEquation, malwareEquation, testPointsStart, testP
         gaussian1[2] = newC1
         gaussian2[2] = newC2
     
+    gaussian1[3], gaussian2[3] = toolbox.treeMate(gaussian1[3], gaussian2[3])
+
     return gaussian1, gaussian2
 
-  toolbox.register("mutate", mutate)
   toolbox.register("mate", mate)
 
   def gaussianFunction(a, b, c, points):
@@ -207,13 +231,24 @@ def toolboxGaussianSetup(benignEquation, malwareEquation, testPointsStart, testP
                   )),
               )
 
-  def gaussianTrojan(individual, benignEquation, x):
-        return benignEquation(x) + gaussianFunction(individual[0], individual[1], individual[2], x)
+  def compileGaussianIndividual(individual):
+      compiledPrimitives = toolbox.compile(individual[3])
+      compiledGaussianFunction = partial(gaussianFunction, individual[0], individual[1], individual[2])
+
+      def compiledWhole(x):
+          return np.multiply(compiledGaussianFunction(x), compiledPrimitives(x))
+
+      return compiledWhole
+
+  toolbox.register("compileGaussianIndividual", compileGaussianIndividual)
+
+  def gaussianTrojan(individual, benignEquation):
+        compiledIndividual = toolbox.compileGaussianIndividual(individual)
+        return lambda x: benignEquation(x) + compiledIndividual(x)
   toolbox.register("gaussianTrojan", gaussianTrojan)
 
   def gaussianEvalSymbReg(individual, targetFunction, points):
-    def trojan(x):
-        return toolbox.gaussianTrojan(individual, toolbox.benignEquation, x)
+    trojan = toolbox.gaussianTrojan(individual, toolbox.benignEquation)
 
     return toolbox.generalEvalSymbReg(trojan, targetFunction, points)
 

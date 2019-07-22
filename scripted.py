@@ -109,18 +109,18 @@ def produceOutputs():
                 )
             else:
                 toolbox = toolboxGaussianSetup(results["benignEquation"], results["malwareEquation"],
-                    results["testPoints"]["start"], results["testPoints"]["stop"],
+                    1, 3, 17, results["testPoints"]["start"], results["testPoints"]["stop"],
                     results["testPoints"]["step"], results["insertion"]["start"], 
                     results["insertion"]["stop"], -3, 3
                 )
-                evolvedTrojan = partial(toolbox.gaussianTrojan, results["creation"]["hallOfFame"][0], toolbox.benignEquation)
+                evolvedTrojan = toolbox.gaussianTrojan(results["creation"]["hallOfFame"][0], toolbox.benignEquation)
                 plotTrojanCreation(toolbox.benignEquation, toolbox.malwareEquation,
                     toolbox.pieceWiseFunction,
                     evolvedTrojan,
                     toolbox.testPoints(), results["insertion"]["start"], results["insertion"]["stop"],
                     filePath.replace("pickle", "directTrojanCreation.png")
                 )
-                evolvedBenign = partial(toolbox.gaussianTrojan, results["removal"]["hallOfFame"][0], toolbox.benignEquation)
+                evolvedBenign = toolbox.gaussianTrojan(results["removal"]["hallOfFame"][0], toolbox.benignEquation)
                 plotTrojanRemoval(toolbox.benignEquation, toolbox.malwareEquation,
                     evolvedTrojan,
                     evolvedBenign,

@@ -124,7 +124,10 @@ if __name__ == "__main__":
             args.test_points_step, args.insertion_start, args.insertion_stop
             )
   else:
-    toolbox = toolboxGaussianSetup(args.benign_equation, args.malware_equation, args.test_points_start, args.test_points_stop, args.test_points_step, args.insertion_start, args.insertion_stop, -3, 3)
+    toolbox = toolboxGaussianSetup(args.benign_equation, args.malware_equation,args.mutation_sub_tree_height_min,
+            args.mutation_sub_tree_height_max, args.max_tree_height, args.test_points_start, args.test_points_stop,
+            args.test_points_step, args.insertion_start, args.insertion_stop, -3, 3
+            )
 
   # Create the Trojan
   toolbox.register("evaluate", toolbox.evalSymbReg, targetFunction=toolbox.pieceWiseFunction)
