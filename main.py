@@ -118,7 +118,7 @@ if __name__ == "__main__":
   args = _processArguments()
   creatorSetup(args.fitness_weight)
   if args.direct:
-    toolbox = toolboxDirectSetup(args.benign_equation, args.malware_equation, args.fitness_weight,
+    toolbox = toolboxDirectSetup(args.benign_equation, args.malware_equation,
             args.mutation_sub_tree_height_min, args.mutation_sub_tree_height_max,
             args.max_tree_height, args.test_points_start, args.test_points_stop,
             args.test_points_step, args.insertion_start, args.insertion_stop
@@ -146,10 +146,19 @@ if __name__ == "__main__":
     toolbox.register("individual", tools.initIterate, creator.DirectedIndividual,
      lambda: trojan
     )
+    toolbox.unregister("evaluate")
   else:
-    trojan = creationResults["hallOfFame"][0]
+    trojan = toolbox.manualEquation(toolbox.guassianTrojanAsPrimitives(
+              creationResults["hallOfFame"][0],
+              toolbox.benignEquationPrimitiveTree
+            ))
+    toolbox = toolboxDirectSetup(args.benign_equation, args.malware_equation,
+            args.mutation_sub_tree_height_min, args.mutation_sub_tree_height_max,
+            args.max_tree_height, args.test_points_start, args.test_points_stop,
+            args.test_points_step, args.insertion_start, args.insertion_stop
+            )
     toolbox.unregister("individual")
-    toolbox.register("individual", tools.initIterate, creator.GaussianIndividual,
+    toolbox.register("individual", tools.initIterate, creator.DirectIndividual,
      lambda: trojan
     )
   # Redfine the population with the new individual
@@ -158,7 +167,6 @@ if __name__ == "__main__":
     toolbox.individual
   )
   # Redefine the target to be the benign equation
-  toolbox.unregister("evaluate")
   toolbox.register("evaluate", toolbox.evalSymbReg,
           targetFunction=toolbox.benignEquation
   )

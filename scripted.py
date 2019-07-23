@@ -58,28 +58,30 @@ def runEvolution():
                             insertionStop
                             )
                         )
-                if os.path.exists(outputName):
+                if os.path.exists(outputName) and not args.redoRemoval:
                     # This simulation has allready been run, so skip it
                     continue
                 # Run evolving the Trojan
-                subprocess.run(
-                    [
-                        "./main.py",
-                        benignEquation,
-                        benignEquationName,
-                        malwareEquation,
-                        malwareEquationName,
-                        "--output_name",
-                        outputName,
-                        "--verbose",
-                        "--max_number_of_generations",
-                        str(args.max_number_of_generations),
-                        "--insertion_start",
-                        str(insertionStart),
-                        "--insertion_stop",
-                        str(insertionStop),
-                    ]
-                )
+                programArgs = [
+                                  "./main.py",
+                                  benignEquation,
+                                  benignEquationName,
+                                  malwareEquation,
+                                  malwareEquationName,
+                                  "--output_name",
+                                  outputName,
+                                  "--verbose",
+                                  "--max_number_of_generations",
+                                  str(args.max_number_of_generations),
+                                  "--insertion_start",
+                                  str(insertionStart),
+                                  "--insertion_stop",
+                                  str(insertionStop),
+                              ]
+                if args.redoRemoval:
+                    programArgs.extend(["--redoRemovalPickle", outputName])
+
+                subprocess.run(programArgs)
 
 
 def produceOutputs():
@@ -128,14 +130,20 @@ def produceOutputs():
                     toolbox.pieceWiseFunction,
                     evolvedTrojan,
                     toolbox.testPoints(), results["insertion"]["start"], results["insertion"]["stop"],
-                    filePath.replace("pickle", "directTrojanCreation.png")
+                    filePath.replace("pickle", "gaussianTrojanCreation.png")
                 )
                 evolvedBenign = toolbox.gaussianTrojan(results["removal"]["hallOfFame"][0], toolbox.benignEquation)
                 plotTrojanRemoval(toolbox.benignEquation, toolbox.malwareEquation,
                     evolvedTrojan,
                     evolvedBenign,
                     toolbox.testPoints(), results["insertion"]["start"], results["insertion"]["stop"],
-                    filePath.replace("pickle", "directTrojanRemoval.png")
+                    filePath.replace("pickle", "gaussianTrojanRemoval.png")
+                )
+                plotTrojanRemoval(toolbox.benignEquation, toolbox.malwareEquation,
+                    evolvedTrojan,
+                    evolvedBenign,
+                    toolbox.testPoints(), results["insertion"]["start"], results["insertion"]["stop"],
+                    filePath.replace("pickle", "gaussianTrojanRemoval.png")
                 )
 
 def produceLaTeXListOfEquations():
@@ -157,6 +165,9 @@ if __name__ == "__main__":
     )
     parser.add_argument("--direct", action="store_true", default=False,
             help="Uses the direct manipluation of an equation instead of gausian"
+    )
+    parser.add_argument("--redoRemoval", action="store_true", default=False,
+            help="Redos only the removal part of the evolution process, if the pickle exists"
     )
     args = parser.parse_args()
 

@@ -69,7 +69,7 @@ def toolboxSetup(benignEquation, malwareEquation, testPointsStart, testPointsSto
 def toolboxDirectSetup(benignEquation, malwareEquation, mutationSubTreeHeightMin,
         mutationSubTreeHeightMax, maxTreeHeight, testPointsStart, testPointsStop,
         testPointsStep, insertionStart, insertionStop):
-  toolbox = toolboxSetup(benignEquation, malwareEquatio, ntestPointsStart, testPointsStop, testPointsStep, insertionStart, insertionStop) 
+  toolbox = toolboxSetup(benignEquation, malwareEquation, testPointsStart, testPointsStop, testPointsStep, insertionStart, insertionStop) 
   # Define creation of indiviuals for the  population
   toolbox.register("individual", tools.initIterate, creator.DirectIndividual, 
           lambda: toolbox.benignEquationPrimitiveTree()
@@ -97,7 +97,7 @@ def toolboxDirectSetup(benignEquation, malwareEquation, mutationSubTreeHeightMin
     max_value=maxTreeHeight)
   )
 
-  def compiledIndivdualEvalSymbReg(individual, targetFunction, points):
+  def compiledIndividualEvalSymbReg(individual, targetFunction, points):
     # Transform the tree expression in a callable function
     compiledIndivdual = toolbox.compile(expr=individual)
     return toolbox.generalEvalSymbReg(compiledIndivdual, targetFunction, points)
@@ -244,9 +244,28 @@ def toolboxGaussianSetup(benignEquation, malwareEquation, mutationSubTreeHeightM
         return lambda x: benignEquation(x) + compiledIndividual(x)
   toolbox.register("gaussianTrojan", gaussianTrojan)
 
+  def gaussianFunctionAsPrimitives(individual):
+      return "mul({a},exp(div(neg(pow(sub(x,{b},2)),mul(2,pow({c},2))))".format(
+          a=individual[0], b=individual[1], c=individual[2]
+      )
+  toolbox.register("gaussianFunctionAsPrimitives", gaussianFunctionAsPrimitives)
+
+  def guassianIndividualAsPrimitives(individual):
+      return "mul({},{})".format(
+          toolbox.gaussianFunctionAsPrimitives(individual),
+          individual[3]
+      )
+  toolbox.register("gaussianIndividualAsPrimitives", guassianIndividualAsPrimitives)
+
+  def guassianTrojanAsPrimitives(individual, benignEquationPrimitives):
+     return "add({},{})".format(
+         benignEquationPrimitives(),
+         toolbox.gaussianIndividualAsPrimitives(individual)
+     )
+  toolbox.register("guassianTrojanAsPrimitives", guassianTrojanAsPrimitives)
+
   def gaussianEvalSymbReg(individual, targetFunction, points):
     trojan = toolbox.gaussianTrojan(individual, toolbox.benignEquation)
-
     return toolbox.generalEvalSymbReg(trojan, targetFunction, points)
 
   toolbox.register("evalSymbReg", gaussianEvalSymbReg, points=toolbox.testPoints())
