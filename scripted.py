@@ -50,6 +50,17 @@ def runEvolution():
             if benignEquationName == malwareEquationName:
                 continue
             for insertionStart, insertionStop in [(-1,1), (-0.5,0.5), (-0.25,0.25)]:
+                outputName = os.path.join(outputDirectory,
+                        "{}-{}-{}-{}.pickle".format(
+                            benignEquationName,
+                            malwareEquationName,
+                            insertionStart,
+                            insertionStop
+                            )
+                        )
+                if os.path.exists(outputName):
+                    # This simulation has allready been run, so skip it
+                    continue
                 # Run evolving the Trojan
                 subprocess.run(
                     [
@@ -59,14 +70,7 @@ def runEvolution():
                         malwareEquation,
                         malwareEquationName,
                         "--output_name",
-                        os.path.join(outputDirectory,
-                            "{}-{}-{}-{}.pickle".format(
-                                benignEquationName,
-                                malwareEquationName,
-                                insertionStart,
-                                insertionStop
-                            )
-                        ),
+                        outputName,
                         "--verbose",
                         "--max_number_of_generations",
                         str(args.max_number_of_generations),
