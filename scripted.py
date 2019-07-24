@@ -58,9 +58,6 @@ def runEvolution():
                             insertionStop
                             )
                         )
-                if os.path.exists(outputName) and not args.redoRemoval:
-                    # This simulation has allready been run, so skip it
-                    continue
                 # Run evolving the Trojan
                 programArgs = [
                                   "./main.py",
@@ -78,8 +75,14 @@ def runEvolution():
                                   "--insertion_stop",
                                   str(insertionStop),
                               ]
-                if args.redoRemoval:
-                    programArgs.extend(["--redoRemovalPickle", outputName])
+                if os.path.exists(outputName):
+                    if not args.redoRemoval:
+                      # This simulation has already been run, 
+                      # and we don't want to redo the removal portion
+                      # so skip it
+                      continue
+                    else:
+                      programArgs.extend(["--redoRemovalPickle", outputName])
 
                 subprocess.run(programArgs)
 
