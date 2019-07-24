@@ -135,7 +135,7 @@ def produceOutputs():
                     toolbox.testPoints(), results["insertion"]["start"], results["insertion"]["stop"],
                     filePath.replace("pickle", "gaussianTrojanCreation.png")
                 )
-                evolvedBenign = toolbox.gaussianTrojan(results["removal"]["hallOfFame"][0], toolbox.benignEquation)
+                evolvedBenign = toolbox.compile(results["removal"]["hallOfFame"][0])
                 plotTrojanRemoval(toolbox.benignEquation, toolbox.malwareEquation,
                     evolvedTrojan,
                     evolvedBenign,
