@@ -63,7 +63,7 @@ def crossAnalysis():
 
 def modeSpecificAnalysis(mode):
     print("Analysis: {}".format(mode.capitalize()))
-    print("Average Fitness: {}".format(np.mean(results[mode]["hallOfFame"][0].fitness.values[0])))
+    print("Average Fitness: {}".format(np.mean([results[mode]["hallOfFame"][0].fitness.values[0] for results in allResults])))
     print("Max Generations Used: {}".format(max(results[mode]["generationsUsed"]
         for results in allResults)
     ))
@@ -92,7 +92,21 @@ def modeSpecificAnalysis(mode):
         sizeRatios.append(np.divide(evolvedLength, originalLength))
 
     print("Average {}/Benign: {}".format(mode.capitalize(), np.mean(sizeRatios)))
-    
+   
+    # Save file of equation evolutions
+    with open("{}-equationEvolutionText.txt".format(mode), "w") as fileOut:
+        seperatorLine = "--------------------\n"
+        fileOut.write("Benign <-> Evolved {}\n{}".format(mode.capitalize(), seperatorLine))
+
+        for results in allResults:
+            fileOut.write("Fitness: {}\n{}\n{}\n{}".format(
+                results[mode]["hallOfFame"][0].fitness.values[0],
+                results["benignEquation"],
+                results[mode]["hallOfFame"][0],
+                seperatorLine
+                )
+            )
+
     def removeNumbers(string):
         return ''.join(c for c in string if not c.isdigit())
 
