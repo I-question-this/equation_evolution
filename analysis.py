@@ -6,6 +6,8 @@ import operator
 import os
 import pickle
 import pygraphviz as pgv
+from deap import creator, gp
+from equation_evolution.primitives import pset
 from equation_evolution.setup import creatorSetup
 from functools import partial
 from sys import argv
@@ -34,21 +36,62 @@ for subDir, dirs, files in os.walk(outputDirectory):
                     )
             allResults.append(results)
 
-def analysis(mode):
-    print("Analysis: {}".format(mode))
+def crossAnalysis():
+    print("Analysis: Cross")
+
+    sizeRatios = []
+    for result in allResults:
+        evolvedCreation = result["creation"]["hallOfFame"][0]
+        if type(evolvedCreation) == creator.DirectIndividual:
+            evolvedCreationLength = len(evolvedCreation)
+        elif type(evolvedCreation) == creator.GaussianIndividual:
+            evolvedCreationLength = len(evolvedCreation[3])
+        else:
+            raise ValueError("Unknown type: {}".format(type(evolvedCreation)))
+
+        evolvedRemoval = result["removal"]["hallOfFame"][0]
+        if type(evolvedRemoval) == creator.DirectIndividual:
+            evolvedRemovalLength = len(evolvedRemoval)
+        elif type(evolvedRemoval) == creator.GaussianIndividual:
+            evolvedRemovalLength = len(evolvedRemoval[3])
+        else:
+            raise ValueError("Unknown type: {}".format(type(evolvedRemoval)))
+
+        sizeRatios.append(np.divide(evolvedRemovalLength, evolvedCreationLength))
+
+    print("Average of Removal/Creation: {}".format(np.mean(sizeRatios)))
+
+def modeSpecificAnalysis(mode):
+    print("Analysis: {}".format(mode.capitalize()))
+    print("Average Fitness: {}".format(np.mean(results[mode]["hallOfFame"][0].fitness.values[0])))
     print("Max Generations Used: {}".format(max(results[mode]["generationsUsed"]
-        for results in allResults))
-    )
+        for results in allResults)
+    ))
     print("Min Generations Used: {}".format(min(results[mode]["generationsUsed"]
-        for results in allResults))
-    )
+        for results in allResults)
+    ))
     print("Average Generations Used: {}".format(np.mean([results[mode]["generationsUsed"]
-        for results in allResults]))
-    )
+        for results in allResults])
+    ))
     print("Average Ratio of Generations Used: {}".format(
         np.mean([results[mode]["generationsUsed"]/results[mode]["maximumGenerationsAllowed"]
-            for results in allResults]))
-    ) 
+            for results in allResults])
+    ))
+
+    sizeRatios = []
+    for result in allResults:
+        evolved = result[mode]["hallOfFame"][0]
+        if type(evolved) == creator.DirectIndividual:
+            evolvedLength = len(evolved)
+        elif type(evolved) == creator.GaussianIndividual:
+            evolvedLength = len(evolved[3])
+        else:
+            raise ValueError("Unknown type: {}".format(type(evolved)))
+
+        originalLength = len(gp.PrimitiveTree.from_string(result["benignEquation"], pset))
+        sizeRatios.append(np.divide(evolvedLength, originalLength))
+
+    print("Average {}/Benign: {}".format(mode.capitalize(), np.mean(sizeRatios)))
     
     def removeNumbers(string):
         return ''.join(c for c in string if not c.isdigit())
@@ -104,6 +147,7 @@ def analysis(mode):
     plt.savefig(os.path.join("presentationOutput", "{}_generations_used.png".format(mode)))
     plt.close()
 
-analysis("creation")
-analysis("removal")
+modeSpecificAnalysis("creation")
+modeSpecificAnalysis("removal")
+crossAnalysis()
 
