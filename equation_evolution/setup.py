@@ -6,16 +6,22 @@ from functools import partial
 from deap import base, creator, gp, tools
 
 
-def creatorSetup(fitnessWeight):
+def creatorSetup(equationSimillarityWeight, removalWeight):
   # Create a custom type
   creator.create("FitnessMin", base.Fitness,
-     weights=(fitnessWeight,)
+     weights=(equationSimillarityWeight,)
   )
   creator.create("DirectIndividual", gp.PrimitiveTree,
     fitness=creator.FitnessMin, pset=pset
   )
-      
   creator.create("GaussianIndividual", list, fitness=creator.FitnessMin)
+      
+  creator.create("RemovalFitnessMin", base.Fitness,
+     weights=(equationSimillarityWeight, removalWeight)
+  )
+  creator.create("RemovalIndividual", gp.PrimitiveTree,
+    fitness=creator.RemovalFitnessMin, pset=pset
+  )
 
 
 def toolboxSetup(benignEquation, malwareEquation, testPointsStart, testPointsStop, testPointsStep, insertionStart, insertionStop):

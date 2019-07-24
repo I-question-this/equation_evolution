@@ -88,7 +88,7 @@ def runEvolution():
 
 
 def produceOutputs():
-    creatorSetup(-2.0)
+    creatorSetup(-2.0, -2.0)
     for subDir, dirs, files in os.walk(outputDirectory):
         for fileName in files:
             if not fileName.endswith(".pickle"):

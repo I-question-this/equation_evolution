@@ -102,7 +102,7 @@ def runEvolution(args, toolbox, targetError):
 
   # Define funcitons for stopping output
   def sufficientlyLowError(population, hallOfFame, error):
-      return hallOfFame[0].fitness.values[0] <= error
+      return all(value <= error for value in hallOfFame[0].fitness.values)
 
   hof, pop, gen, logbook, rndstate = evolveUntilCondition(toolbox, pop, hof, args.mutation_probability, 
           args.crossover_probability, mstats,
@@ -116,7 +116,7 @@ def runEvolution(args, toolbox, targetError):
 
 if __name__ == "__main__":
   args = _processArguments()
-  creatorSetup(args.fitness_weight)
+  creatorSetup(args.fitness_weight, args.fitness_weight)
   if args.direct:
     toolbox = toolboxDirectSetup(args.benign_equation, args.malware_equation,
             args.mutation_sub_tree_height_min, args.mutation_sub_tree_height_max,
@@ -143,7 +143,7 @@ if __name__ == "__main__":
   if args.direct:
     trojan = toolbox.manualEquation(str(creationResults["hallOfFame"][0]))
     toolbox.unregister("individual")
-    toolbox.register("individual", tools.initIterate, creator.DirectedIndividual,
+    toolbox.register("individual", tools.initIterate, creator.RemovalIndividual,
      lambda: trojan
     )
     toolbox.unregister("evaluate")
@@ -158,16 +158,21 @@ if __name__ == "__main__":
             args.test_points_step, args.insertion_start, args.insertion_stop
             )
     toolbox.unregister("individual")
-    toolbox.register("individual", tools.initIterate, creator.DirectIndividual,
-     lambda: trojan
+    toolbox.register("individual", tools.initIterate, creator.RemovalIndividual,
+            lambda: trojan
     )
   # Redfine the population with the new individual
   toolbox.unregister("population")
   toolbox.register("population", tools.initRepeat, list,
     toolbox.individual
   )
-  # Redefine the target to be the benign equation
-  toolbox.register("evaluate", toolbox.evalSymbReg,
+  # Redefine the evaluation function
+  def removalEvaluate(individual, targetFunction):
+      symbRegFitness = toolbox.evalSymbReg(individual, targetFunction)[0]
+      sizeFitness = abs(len(individual) - len(toolbox.benignEquationPrimitiveTree()))
+      return symbRegFitness, sizeFitness
+
+  toolbox.register("evaluate", removalEvaluate,
           targetFunction=toolbox.benignEquation
   )
   removalResults = runEvolution(args, toolbox, args.trojan_removal_target_error)

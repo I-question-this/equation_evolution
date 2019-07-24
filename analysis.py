@@ -14,7 +14,7 @@ from sys import argv
 
 outputDirectory = "output"
 
-creatorSetup(-2.0)
+creatorSetup(-2.0, -2.0)
 
 allResults = []
 
@@ -42,7 +42,7 @@ def crossAnalysis():
     sizeRatios = []
     for result in allResults:
         evolvedCreation = result["creation"]["hallOfFame"][0]
-        if type(evolvedCreation) == creator.DirectIndividual:
+        if type(evolvedCreation) == creator.DirectIndividual or type(evolvedCreation) == creator.RemovalIndividual:
             evolvedCreationLength = len(evolvedCreation)
         elif type(evolvedCreation) == creator.GaussianIndividual:
             evolvedCreationLength = len(evolvedCreation[3])
@@ -50,7 +50,7 @@ def crossAnalysis():
             raise ValueError("Unknown type: {}".format(type(evolvedCreation)))
 
         evolvedRemoval = result["removal"]["hallOfFame"][0]
-        if type(evolvedRemoval) == creator.DirectIndividual:
+        if type(evolvedRemoval) == creator.DirectIndividual or type(evolvedRemoval) == creator.RemovalIndividual:
             evolvedRemovalLength = len(evolvedRemoval)
         elif type(evolvedRemoval) == creator.GaussianIndividual:
             evolvedRemovalLength = len(evolvedRemoval[3])
@@ -81,7 +81,7 @@ def modeSpecificAnalysis(mode):
     sizeRatios = []
     for result in allResults:
         evolved = result[mode]["hallOfFame"][0]
-        if type(evolved) == creator.DirectIndividual:
+        if type(evolved) == creator.DirectIndividual or type(evolved) == creator.RemovalIndividual:
             evolvedLength = len(evolved)
         elif type(evolved) == creator.GaussianIndividual:
             evolvedLength = len(evolved[3])
