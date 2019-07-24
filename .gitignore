@@ -1,7 +1,6 @@
 # Output files
 output/
-scriptedOutput/
-presentationOutput/
+oldOutputs/
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
