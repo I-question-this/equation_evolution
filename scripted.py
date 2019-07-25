@@ -3,11 +3,12 @@
 """
 import argparse
 import datetime
+import matplotlib.pyplot as plt
 import numpy as np
 import os
 import pickle
 import subprocess
-from deap import gp
+from deap import creator, gp
 from functools import partial
 from equation_evolution.output import plotTrojanCreation, plotTrojanRemoval
 from equation_evolution.setup import creatorSetup, toolboxDirectSetup, toolboxGaussianSetup
@@ -87,8 +88,9 @@ def runEvolution():
                 subprocess.run(programArgs)
 
 
-def produceOutputs():
+def gatherResults():
     creatorSetup(-2.0, -2.0)
+    allResults = []
     for subDir, dirs, files in os.walk(outputDirectory):
         for fileName in files:
             if not fileName.endswith(".pickle"):
@@ -97,30 +99,18 @@ def produceOutputs():
             filePath = os.path.join(subDir, fileName)
             with open(filePath, "rb") as fileIn:
                 results = pickle.load(fileIn)
-
+                
             if results["version"] < 1.2:
                 print("{} -- Unsupported version: {}".format(fileName, results["version"]))
                 continue
+            
+            results["filePath"] = filePath
 
-            benignName = fileName.split('-')[0]
-            malwareName = fileName.split('-')[1]
             if args.direct:
                 toolbox = toolboxDirectSetup(results["benignEquation"], results["malwareEquation"],
                     1, 3, 17, results["testPoints"]["start"], results["testPoints"]["stop"],
                     results["testPoints"]["step"], results["insertion"]["start"], 
                     results["insertion"]["stop"]
-                )
-                plotTrojanCreation(toolbox.benignEquation, toolbox.malwareEquation,
-                    toolbox.pieceWiseFunction,
-                    toolbox.compile(results["creation"]["hallOfFame"][0]),
-                    toolbox.testPoints(), results["insertion"]["start"], results["insertion"]["stop"],
-                    filePath.replace("pickle", "directTrojanCreation.png")
-                )
-                plotTrojanRemoval(toolbox.benignEquation, toolbox.malwareEquation,
-                    toolbox.compile(results["creation"]["hallOfFame"][0]),
-                    toolbox.compile(results["removal"]["hallOfFame"][0]),
-                    toolbox.testPoints(), results["insertion"]["start"], results["insertion"]["stop"],
-                    filePath.replace("pickle", "directTrojanRemoval.png")
                 )
             else:
                 toolbox = toolboxGaussianSetup(results["benignEquation"], results["malwareEquation"],
@@ -128,26 +118,183 @@ def produceOutputs():
                     results["testPoints"]["step"], results["insertion"]["start"], 
                     results["insertion"]["stop"], -3, 3
                 )
-                evolvedTrojan = toolbox.gaussianTrojan(results["creation"]["hallOfFame"][0], toolbox.benignEquation)
-                plotTrojanCreation(toolbox.benignEquation, toolbox.malwareEquation,
-                    toolbox.pieceWiseFunction,
-                    evolvedTrojan,
-                    toolbox.testPoints(), results["insertion"]["start"], results["insertion"]["stop"],
-                    filePath.replace("pickle", "gaussianTrojanCreation.png")
+
+            results["toolbox"] = toolbox
+            results["removal"]["generationsUsed"] = min(results["removal"]["maximumGenerationsAllowed"],
+                      results["removal"]["generationsUsed"]
+                    )
+            results["creation"]["generationsUsed"] = min(results["creation"]["maximumGenerationsAllowed"],
+                      results["creation"]["generationsUsed"]
+                    )
+            allResults.append(results)
+    return allResults
+
+def individualResultsAnalysis(allResults):
+    for results in allResults:
+        toolbox = results["toolbox"]
+        if args.direct:
+            plotTrojanCreation(toolbox.benignEquation, toolbox.malwareEquation,
+                toolbox.pieceWiseFunction,
+                toolbox.compile(results["creation"]["hallOfFame"][0]),
+                toolbox.testPoints(), results["insertion"]["start"], results["insertion"]["stop"],
+                results["filePath"].replace("pickle", "directTrojanCreation.png")
+            )
+            plotTrojanRemoval(toolbox.benignEquation, toolbox.malwareEquation,
+                toolbox.compile(results["creation"]["hallOfFame"][0]),
+                toolbox.compile(results["removal"]["hallOfFame"][0]),
+                toolbox.testPoints(), results["insertion"]["start"], results["insertion"]["stop"],
+                results["filePath"].replace("pickle", "directTrojanRemoval.png")
+            )
+        else:
+            evolvedTrojan = toolbox.gaussianTrojan(results["creation"]["hallOfFame"][0], toolbox.benignEquation)
+            plotTrojanCreation(toolbox.benignEquation, toolbox.malwareEquation,
+                toolbox.pieceWiseFunction,
+                evolvedTrojan,
+                toolbox.testPoints(), results["insertion"]["start"], results["insertion"]["stop"],
+                results["filePath"].replace("pickle", "gaussianTrojanCreation.png")
+            )
+            evolvedBenign = toolbox.compile(results["removal"]["hallOfFame"][0])
+            plotTrojanRemoval(toolbox.benignEquation, toolbox.malwareEquation,
+                evolvedTrojan,
+                evolvedBenign,
+                toolbox.testPoints(), results["insertion"]["start"], results["insertion"]["stop"],
+                results["filePath"].replace("pickle", "gaussianTrojanRemoval.png")
+            )
+
+
+def sortAllResultsIntoTypes(allResults, mode):
+    def removeNumbers(string):
+        return ''.join(c for c in string if not c.isdigit())
+
+    types = {}
+    for result in allResults:
+      typeKey = "{}->{}".format(
+              removeNumbers(result["malwareEquationType"]),
+              removeNumbers(result["benignEquationType"])
+      )
+
+      if types.get(typeKey) is None:
+          types[typeKey] = {"averageGensUsed": None, "results": list()}
+      types[typeKey]["results"].append(result)
+
+    for typeKey in types.keys():
+      types[typeKey]["averageGensUsed"] = np.mean([r[mode]["generationsUsed"] for r in types[typeKey]["results"]])
+    return types
+
+
+def modeSpecificAnalysis(allResults, mode):
+    print("Analysis: {}".format(mode.capitalize()))
+    print("Average Fitness: {}".format(np.mean([results[mode]["hallOfFame"][0].fitness.values[0] for results in allResults])))
+    print("Max Generations Used: {}".format(max(results[mode]["generationsUsed"]
+        for results in allResults)
+    ))
+    print("Min Generations Used: {}".format(min(results[mode]["generationsUsed"]
+        for results in allResults)
+    ))
+    print("Average Generations Used: {}".format(np.mean([results[mode]["generationsUsed"]
+        for results in allResults])
+    ))
+    print("Average Ratio of Generations Used: {}".format(
+        np.mean([results[mode]["generationsUsed"]/results[mode]["maximumGenerationsAllowed"]
+            for results in allResults])
+    ))
+
+    sizeRatios = []
+    for results in allResults:
+        evolved = results[mode]["hallOfFame"][0]
+        if type(evolved) == creator.DirectIndividual or type(evolved) == creator.RemovalIndividual:
+            evolvedLength = len(evolved)
+        elif type(evolved) == creator.GaussianIndividual:
+            evolvedLength = len(evolved[3])
+        else:
+            raise ValueError("Unknown type: {}".format(type(evolved)))
+
+        originalLength = len(results["toolbox"].manualEquation(results["benignEquation"]))
+        sizeRatios.append(np.divide(evolvedLength, originalLength))
+
+    print("Average {}/Benign: {}".format(mode.capitalize(), np.mean(sizeRatios)))
+   
+    # Save file of equation evolutions
+    with open(os.path.join(outputDirectory, "{}-equationEvolutionText.txt".format(mode)), "w") as fileOut:
+        seperatorLine = "--------------------\n"
+        fileOut.write("Benign <-> Evolved {}\n{}".format(mode.capitalize(), seperatorLine))
+
+        for results in allResults:
+            fileOut.write("Fitness: {}\n{}\n{}\n{}".format(
+                results[mode]["hallOfFame"][0].fitness.values[0],
+                results["toolbox"].manualEquation(results["benignEquation"]), # For consistency in formatting.
+                results[mode]["hallOfFame"][0],
+                seperatorLine
                 )
-                evolvedBenign = toolbox.compile(results["removal"]["hallOfFame"][0])
-                plotTrojanRemoval(toolbox.benignEquation, toolbox.malwareEquation,
-                    evolvedTrojan,
-                    evolvedBenign,
-                    toolbox.testPoints(), results["insertion"]["start"], results["insertion"]["stop"],
-                    filePath.replace("pickle", "gaussianTrojanRemoval.png")
-                )
-                plotTrojanRemoval(toolbox.benignEquation, toolbox.malwareEquation,
-                    evolvedTrojan,
-                    evolvedBenign,
-                    toolbox.testPoints(), results["insertion"]["start"], results["insertion"]["stop"],
-                    filePath.replace("pickle", "gaussianTrojanRemoval.png")
-                )
+            )
+
+
+def modeAndTypeSpecificAnalysis(types, mode):
+    # Create a plot of the average generations used
+    sortedByAverageGensUsed = sorted(list(types.keys()), key=lambda typeKey: types[typeKey]["averageGensUsed"])
+    xs = np.arange(len(types))
+    plt.bar(xs, [types[typeKey]["averageGensUsed"] for typeKey in sortedByAverageGensUsed], zorder=-1)
+    for typeKey, x in zip(sortedByAverageGensUsed, xs):
+        for result in types[typeKey]["results"]:
+          if result[mode]["generationsUsed"] == result[mode]["maximumGenerationsAllowed"]:
+            color="r"
+          elif result[mode]["generationsUsed"] == 1:
+            color="g"
+          else:
+            color="k"
+          plt.scatter([x], result[mode]["generationsUsed"], color=color)
+
+    plt.title("Generations Used -- {}".format(mode))
+    plt.xlabel("Malware -> Benign")
+    plt.xticks(xs,
+            list(types.keys()),
+            rotation='vertical'
+    )
+    plt.ylabel("Num. Gens. Used")
+    plt.yticks(np.arange(0,2000,250))
+    plt.grid()
+
+    plt.gca().margins(x=0)
+    plt.gcf().canvas.draw()
+    tl = plt.gca().get_xticklabels()
+    maxsize = max([t.get_window_extent().width for t in tl])
+    m = 0.2 # inch margin
+    s = maxsize/plt.gcf().dpi*len(allResults)+2*m
+    margin = m/plt.gcf().get_size_inches()[0]
+
+    plt.gcf().subplots_adjust(left=margin, right=1.-margin, bottom=0.4)
+    plt.gcf().set_size_inches(s, plt.gcf().get_size_inches()[1])
+
+    plt.savefig(os.path.join("presentationOutput", "{}_generations_used.png".format(mode)))
+    plt.close()
+
+
+def allResultsAnalysis(allResults):
+    # All modes
+    print("Analysis: Cross")
+
+    sizeRatios = []
+    for result in allResults:
+        evolvedCreation = result["creation"]["hallOfFame"][0]
+        if type(evolvedCreation) == creator.DirectIndividual or type(evolvedCreation) == creator.RemovalIndividual:
+            evolvedCreationLength = len(evolvedCreation)
+        elif type(evolvedCreation) == creator.GaussianIndividual:
+            evolvedCreationLength = len(evolvedCreation[3])
+        else:
+            raise ValueError("Unknown type: {}".format(type(evolvedCreation)))
+
+        evolvedRemoval = result["removal"]["hallOfFame"][0]
+        if type(evolvedRemoval) == creator.DirectIndividual or type(evolvedRemoval) == creator.RemovalIndividual:
+            evolvedRemovalLength = len(evolvedRemoval)
+        elif type(evolvedRemoval) == creator.GaussianIndividual:
+            evolvedRemovalLength = len(evolvedRemoval[3])
+        else:
+            raise ValueError("Unknown type: {}".format(type(evolvedRemoval)))
+
+        sizeRatios.append(np.divide(evolvedRemovalLength, evolvedCreationLength))
+
+    print("Average of Removal/Creation: {}".format(np.mean(sizeRatios)))
+
 
 def produceLaTeXListOfEquations():
     filePath = os.path.join("presentationOutput", "equationsList.tex")
@@ -169,13 +316,42 @@ if __name__ == "__main__":
     parser.add_argument("--direct", action="store_true", default=False,
             help="Uses the direct manipluation of an equation instead of gausian"
     )
-    parser.add_argument("--redoRemoval", action="store_true", default=False,
+    parser.add_argument("--redo_removal", action="store_true", default=False,
             help="Redos only the removal part of the evolution process, if the pickle exists"
+    )
+    parser.add_argument("--skip_individual_analysis", action="store_true", default=False,
+            help="Skips the analsyis/plotting of individual runs."
+    )
+    parser.add_argument("--skip_mode_specific_analysis", action="store_true", default=False,
+            help="Skips the analsyis/plotting specific to creation/removal."
+    )
+    parser.add_argument("--skip_cross_analysis", action="store_true", default=False,
+            help="Skips the analsyis/plotting relating to all runs in aggergate."
+    )
+    parser.add_argument("--skip_LaTeX_equation_list", action="store_true", default=False,
+            help="Skips creating the LaTeX equation list."
     )
     args = parser.parse_args()
 
     if not args.skip_evolution:
         runEvolution()
-    produceOutputs()
-    produceLaTeXListOfEquations()
+
+    # Gather the data
+    allResults = gatherResults()
+    
+    # Analyze the data
+    if not args.skip_individual_analysis:
+      individualResultsAnalysis(allResults)
+
+    if not args.skip_mode_specific_analysis:
+      for mode in ["creation", "removal"]:
+        modeSpecificAnalysis(allResults, mode)
+        byTypes = sortAllResultsIntoTypes(allResults, mode)
+        modeAndTypeSpecificAnalysis(byTypes, mode)
+
+    if not args.skip_cross_analysis:
+      allResultsAnalysis(allResults)
+
+    if not args.skip_LaTeX_equation_list:
+      produceLaTeXListOfEquations()
 
