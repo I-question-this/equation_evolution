@@ -91,6 +91,10 @@ def _processArguments(inputArgs=None):
   parser.add_argument("--redoRemovalPickle",
     help="File path to a pickle to redo the removal without redoing the creation. Yes this option was made because a horrible bug was found in the removal process."
   )
+  parser.add_argument("--special_removal", action="store_true", default=False,
+    help="Evolves based on the size of the benign equation as well as the outputs"
+  )
+
 
   return parser.parse_args(inputArgs)
 
@@ -142,10 +146,6 @@ if __name__ == "__main__":
   # Redefine individuals to start as the Trojan
   if args.direct:
     trojan = toolbox.manualEquation(str(creationResults["hallOfFame"][0]))
-    toolbox.unregister("individual")
-    toolbox.register("individual", tools.initIterate, creator.RemovalIndividual,
-     lambda: trojan
-    )
     toolbox.unregister("evaluate")
   else:
     trojan = toolbox.manualEquation(toolbox.guassianTrojanAsPrimitives(
@@ -157,10 +157,13 @@ if __name__ == "__main__":
             args.max_tree_height, args.test_points_start, args.test_points_stop,
             args.test_points_step, args.insertion_start, args.insertion_stop
             )
-    toolbox.unregister("individual")
-    toolbox.register("individual", tools.initIterate, creator.RemovalIndividual,
-            lambda: trojan
-    )
+  # Redefine the individual for removal
+  toolbox.unregister("individual")
+  toolbox.register("individual",
+      tools.initIterate,
+      creator.RemovalIndividual if args.special_removal else creator.DirectIndividual,
+      lambda: trojan
+  )
   # Redfine the population with the new individual
   toolbox.unregister("population")
   toolbox.register("population", tools.initRepeat, list,

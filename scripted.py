@@ -7,6 +7,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 import os
 import pickle
+import re
 import subprocess
 from deap import creator, gp
 from functools import partial
@@ -77,7 +78,7 @@ def runEvolution():
                                   str(insertionStop),
                               ]
                 if os.path.exists(outputName):
-                    if not args.redoRemoval:
+                    if not args.redo_removal:
                       # This simulation has already been run, 
                       # and we don't want to redo the removal portion
                       # so skip it
@@ -85,6 +86,8 @@ def runEvolution():
                     else:
                       programArgs.extend(["--redoRemovalPickle", outputName])
 
+                if args.special_removal:
+                    programArgs.append("--special_removal")
                 subprocess.run(programArgs)
 
 
@@ -220,13 +223,60 @@ def modeSpecificAnalysis(allResults, mode):
         fileOut.write("Benign <-> Evolved {}\n{}".format(mode.capitalize(), seperatorLine))
 
         for results in allResults:
-            fileOut.write("Fitness: {}\n{}\n{}\n{}".format(
-                results[mode]["hallOfFame"][0].fitness.values[0],
-                results["toolbox"].manualEquation(results["benignEquation"]), # For consistency in formatting.
-                results[mode]["hallOfFame"][0],
-                seperatorLine
-                )
-            )
+            # Gather the original and evovled
+            original = results["toolbox"].manualEquation(results["benignEquation"]) # For consistency in spacing.
+            evolved = results[mode]["hallOfFame"][0]
+            def removeFloatingPoints(equationString):
+                return equationString.replace("1.0","1").replace("0.0","0")
+            origStr = removeFloatingPoints(str(original))
+            evolStr = removeFloatingPoints(str(evolved))
+            # Analyze the evolved
+            originalInEvolved = origStr in evolStr
+            exactDuplicate = origStr == evolStr
+            try:
+              insideSimpleAddition = re.search('add\((.+?), 0\)', evolStr).group(1)
+            except AttributeError:
+              insideSimpleAddition = ""
+            simpleAddition = origStr == insideSimpleAddition
+
+            origRegex = origStr.replace("(","\(").replace(")","\)")
+            for variable in ["-1", "1", "0", "x"]:
+                origRegex = origRegex.replace(variable, "(.+?)")
+            if insideSimpleAddition != "":
+               evolToCheck = insideSimpleAddition
+            else:
+               evolToCheck = evolStr
+            try:
+              origGroups = re.search(origRegex, origStr).groups()
+              evolGroups = re.search(origRegex, evolToCheck).groups()
+              simpleVariableChanges = []
+              for orig, evol in zip(origGroups, evolGroups):
+                  if orig != evol:
+                    simpleVariableChanges.append("{} -> {}".format(orig, evol))
+              simpleVariableChanges = ", ".join(simpleVariableChanges)
+            except AttributeError:
+              simpleVariableChanges = "" 
+            # Write out information
+            fileOut.write("Equation Plotting Fitness: {}\n".format(evolved.fitness.values[0]))
+            fileOut.write("Equation Size Fitness: {}\n".format(evolved.fitness.values[1] if len(evolved.fitness.values) > 1 else "N/A"))
+            fileOut.write("Test Start and Stop: {} <-> {}\n".format(results["insertion"]["start"], results["insertion"]["stop"]))
+            fileOut.write("Orig. in Evol.?: {}\n".format(originalInEvolved))
+            fileOut.write("Exact Duplicate?: {}\n".format(exactDuplicate))
+            fileOut.write("Simple Addition?: {}\n".format(simpleAddition))
+            # Simply write out the equations
+            fileOut.write("Original: {}\n".format(origStr))
+            fileOut.write("Evolved : {}\n".format(evolStr))
+            fileOut.write("Simple Variable Changes: {}\n".format(simpleVariableChanges))
+            # fileOut.write("Differences:\n")
+            # for i,s in enumerate(difflib.ndiff(origStr, evolStr)):
+                # if s[0] == ' ':
+                    # continue
+                # elif s[0] == '-':
+                    # fileOut.write('Delete "{}" from position {}\n'.format(s[-1],i))
+                # elif s[0] == '+':
+                    # fileOut.write('Add "{}" to position {}\n'.format(s[-1],i))
+            # End the section about this equation
+            fileOut.write(seperatorLine)
 
 
 def modeAndTypeSpecificAnalysis(types, mode):
@@ -330,6 +380,9 @@ if __name__ == "__main__":
     )
     parser.add_argument("--skip_LaTeX_equation_list", action="store_true", default=False,
             help="Skips creating the LaTeX equation list."
+    )
+    parser.add_argument("--special_removal", action="store_true", default=False,
+            help="Evolves based on the size of the benign equation as well as the outputs"
     )
     args = parser.parse_args()
 
