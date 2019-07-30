@@ -51,7 +51,7 @@ def runEvolution():
         for malwareEquationName, malwareEquation in equations.items():
             if benignEquationName == malwareEquationName:
                 continue
-            for insertionStart, insertionStop in [(-1,1), (-0.5,0.5), (-0.25,0.25)]:
+            for insertionStart, insertionStop in [(-2,2),(-1.5,1.5),(-1,1), (-0.5,0.5), (-0.25,0.25), (0,1), (-1,0), (-2,0),(0,2)]:
                 outputName = os.path.join(outputDirectory,
                         "{}-{}-{}-{}.pickle".format(
                             benignEquationName,
@@ -216,7 +216,12 @@ def modeSpecificAnalysis(allResults, mode):
         sizeRatios.append(np.divide(evolvedLength, originalLength))
 
     print("Average {}/Benign: {}".format(mode.capitalize(), np.mean(sizeRatios)))
-   
+    
+    if mode == "removal":
+        equationAnalysis(allResults, mode)
+
+  
+def equationAnalysis(allResults, mode):
     # Save file of equation evolutions
     with open(os.path.join(outputDirectory, "{}-equationEvolutionText.txt".format(mode)), "w") as fileOut:
         seperatorLine = "--------------------\n"
@@ -229,21 +234,31 @@ def modeSpecificAnalysis(allResults, mode):
             def removeFloatingPoints(equationString):
                 return equationString.replace("1.0","1").replace("0.0","0")
             origStr = removeFloatingPoints(str(original))
-            evolStr = removeFloatingPoints(str(evolved))
+            if mode == "creation":
+              evolStr = removeFloatingPoints(str(evolved[3]))
+            else:
+              evolStr = removeFloatingPoints(str(evolved))
             # Analyze the evolved
             originalInEvolved = origStr in evolStr
             exactDuplicate = origStr == evolStr
-            try:
-              insideSimpleAddition = re.search('add\((.+?), 0\)', evolStr).group(1)
-            except AttributeError:
-              insideSimpleAddition = ""
-            simpleAddition = origStr == insideSimpleAddition
+            # Determine if it's addition/subtraction by zero
+            if originalInEvolved and not exactDuplicate:
+                # Extract everything but the original equation
+                extraction = evolStr.replace(origStr, "x")
+                # Compile it
+                extrFunc = results["toolbox"].compile(results["toolbox"].manualEquation(extraction))
+                # Test if it always outputs the test point with the test points.
+                sumTest = sum(testPoint - extrFunc(testPoint) for testPoint in results["toolbox"].testPoints())
+                additionOfZero = sumTest == 0
+            else:
+                extraction = ""
+                additionOfZero = False
 
             origRegex = origStr.replace("(","\(").replace(")","\)")
             for variable in ["-1", "1", "0", "x"]:
                 origRegex = origRegex.replace(variable, "(.+?)")
-            if insideSimpleAddition != "":
-               evolToCheck = insideSimpleAddition
+            if extraction != "":
+               evolToCheck = extraction
             else:
                evolToCheck = evolStr
             try:
@@ -262,7 +277,7 @@ def modeSpecificAnalysis(allResults, mode):
             fileOut.write("Test Start and Stop: {} <-> {}\n".format(results["insertion"]["start"], results["insertion"]["stop"]))
             fileOut.write("Orig. in Evol.?: {}\n".format(originalInEvolved))
             fileOut.write("Exact Duplicate?: {}\n".format(exactDuplicate))
-            fileOut.write("Simple Addition?: {}\n".format(simpleAddition))
+            fileOut.write("Addition of Zero?: {}\n".format(additionOfZero))
             # Simply write out the equations
             fileOut.write("Original: {}\n".format(origStr))
             fileOut.write("Evolved : {}\n".format(evolStr))
